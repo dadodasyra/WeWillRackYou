@@ -24,7 +24,7 @@ export default function NouvelleEntreePage() {
       <EntryForm
         requireManualId
         onSaved={(entry: SerializedEntry) => {
-          router.push(`/entree/${entry.id}`);
+          router.push(`/entry/${entry.id}`);
         }}
       />
     </main>

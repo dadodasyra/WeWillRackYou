@@ -14,7 +14,7 @@ export async function GET(request: NextRequest, { params }: Params) {
   if (!entry) return jsonError("Entrée introuvable", 404);
 
   const baseUrl = process.env.AUTH_URL ?? request.nextUrl.origin;
-  const url = `${baseUrl}/entree/${id}`;
+  const url = `${baseUrl}/entry/${id}`;
 
   const png = await QRCode.toBuffer(url, {
     type: "png",

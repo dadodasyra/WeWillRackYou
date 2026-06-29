@@ -153,7 +153,7 @@ export default function HomePage() {
           <LevelLegend visibleLevels={visibleLevels} onToggle={toggleLevel} />
         </div>
         <Link
-          href="/entree/nouveau"
+          href="/entry/new"
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-lg font-bold text-white shadow-md transition hover:bg-emerald-800"
           aria-label="Ajouter une entrée"
           title="Ajouter"
@@ -211,7 +211,7 @@ export default function HomePage() {
                 <p className="text-sm font-medium text-stone-500">#{selectedSlot.entry.id}</p>
                 <div className="flex gap-2">
                   <Link
-                    href={`/entree/${selectedSlot.entry.id}`}
+                    href={`/entry/${selectedSlot.entry.id}`}
                     className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-emerald-300 bg-emerald-50 text-sm text-emerald-800 hover:bg-emerald-100"
                     title="Modifier"
                     aria-label="Modifier"

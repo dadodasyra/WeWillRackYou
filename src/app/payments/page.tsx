@@ -79,7 +79,7 @@ export default function PaiementsPage() {
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-1">
-                  <Link href={`/entree/${entry.id}`} className="font-semibold text-emerald-800">
+                  <Link href={`/entry/${entry.id}`} className="font-semibold text-emerald-800">
                     Entrée #{entry.id}
                   </Link>
                   <p className="text-sm text-stone-600">

@@ -39,7 +39,7 @@ export function DecommissionModal({ entry, open, onClose, onSuccess }: Props) {
     onSuccess?.();
     onClose();
     setForKikiriki(false);
-    router.push(forKikiriki ? "/paiements" : "/");
+    router.push(forKikiriki ? "/payments" : "/");
   }
 
   function handleClose() {

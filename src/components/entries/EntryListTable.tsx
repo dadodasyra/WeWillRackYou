@@ -186,7 +186,7 @@ export function EntryListTable({
                   <td className="px-1 py-1" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-end gap-0.5">
                       <ActionIconButton
-                        href={`/entree/${entry.id}`}
+                        href={`/entry/${entry.id}`}
                         label="Modifier"
                         variant="edit"
                       >

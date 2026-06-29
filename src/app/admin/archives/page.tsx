@@ -40,7 +40,7 @@ export default function ArchivesPage() {
         <ul className="space-y-3">
           {entries.map((entry) => (
             <li key={entry.id} className="rounded-2xl border border-stone-200 bg-white p-4">
-              <Link href={`/entree/${entry.id}`} className="font-semibold text-emerald-800">
+              <Link href={`/entry/${entry.id}`} className="font-semibold text-emerald-800">
                 Entrée #{entry.id}
               </Link>
               <p className="text-sm text-stone-600">

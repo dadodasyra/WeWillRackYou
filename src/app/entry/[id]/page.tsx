@@ -116,7 +116,7 @@ function EntryPageContent() {
           onSaved={(saved) => {
             setEntry(saved);
             setCreating(false);
-            router.replace(`/entree/${saved.id}`);
+            router.replace(`/entry/${saved.id}`);
           }}
         />
       </main>

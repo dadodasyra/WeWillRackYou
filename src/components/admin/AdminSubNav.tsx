@@ -4,8 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const ADMIN_TABS = [
-  { href: "/admin/utilisateurs", label: "Utilisateurs" },
-  { href: "/admin/varietes", label: "Variétés" },
+  { href: "/admin/users", label: "Utilisateurs" },
+  { href: "/admin/varieties", label: "Variétés" },
   { href: "/admin/archives", label: "Archives" },
 ] as const;
 

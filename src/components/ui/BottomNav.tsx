@@ -23,13 +23,13 @@ export function BottomNav() {
           <span aria-hidden>🗺️</span>
           Carte
         </Link>
-        <Link href="/paiements" className={linkClass(pathname === "/paiements")}>
+        <Link href="/payments" className={linkClass(pathname === "/payments")}>
           <span aria-hidden>💶</span>
           Paiements
         </Link>
         {isAdmin && (
           <Link
-            href="/admin/utilisateurs"
+            href="/admin/users"
             className={linkClass(pathname.startsWith("/admin"))}
           >
             <span aria-hidden>⚙️</span>

@@ -271,7 +271,7 @@ export function EntryForm({
           />
           {duplicateEntryId ? (
             <Link
-              href={`/entree/${duplicateEntryId}?edit=1`}
+              href={`/entry/${duplicateEntryId}?edit=1`}
               className="block w-full rounded-xl bg-emerald-700 px-4 py-3 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800"
             >
               Voir l&apos;entrée existante
