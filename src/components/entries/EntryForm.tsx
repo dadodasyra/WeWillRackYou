@@ -8,17 +8,28 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 
 type Props = {
+  /** ID imposé par scan QR (lecture seule). */
   entryId?: number;
+  /** Création manuelle : l'utilisateur saisit l'ID du sticker. */
+  requireManualId?: boolean;
   initial?: SerializedEntry | null;
   onSaved: (entry: SerializedEntry) => void;
   onCancel?: () => void;
 };
 
-export function EntryForm({ entryId, initial, onSaved, onCancel }: Props) {
+export function EntryForm({
+  entryId,
+  requireManualId,
+  initial,
+  onSaved,
+  onCancel,
+}: Props) {
+  const [manualId, setManualId] = useState("");
   const [kind, setKind] = useState<"BIG_BAG" | "OTHER">(initial?.kind ?? "BIG_BAG");
   const [position, setPosition] = useState(initial?.position ?? "");
   const [cerealType, setCerealType] = useState(initial?.cerealType ?? "");
   const [cerealTypeOther, setCerealTypeOther] = useState(initial?.cerealTypeOther ?? "");
+  const [year, setYear] = useState(initial?.year?.toString() ?? "");
   const [weight, setWeight] = useState(initial?.weight?.toString() ?? "");
   const [humidity, setHumidity] = useState(initial?.humidity?.toString() ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
@@ -31,6 +42,7 @@ export function EntryForm({ entryId, initial, onSaved, onCancel }: Props) {
       setPosition(initial.position ?? "");
       setCerealType(initial.cerealType ?? "");
       setCerealTypeOther(initial.cerealTypeOther ?? "");
+      setYear(initial.year?.toString() ?? "");
       setWeight(initial.weight?.toString() ?? "");
       setHumidity(initial.humidity?.toString() ?? "");
       setDescription(initial.description ?? "");
@@ -42,12 +54,20 @@ export function EntryForm({ entryId, initial, onSaved, onCancel }: Props) {
     setLoading(true);
     setError("");
 
+    const resolvedId = entryId ?? (requireManualId ? Number(manualId) : undefined);
+    if (!initial && (!resolvedId || !Number.isInteger(resolvedId) || resolvedId <= 0)) {
+      setError("Indiquez un identifiant valide (numéro du QR code)");
+      setLoading(false);
+      return;
+    }
+
     const payload = {
       kind,
       position: position.trim() || null,
       cerealType: kind === "BIG_BAG" && cerealType ? cerealType : null,
       cerealTypeOther:
         kind === "BIG_BAG" && cerealType === "AUTRE" ? cerealTypeOther : null,
+      year: kind === "BIG_BAG" && year ? Number(year) : null,
       weight: kind === "BIG_BAG" && weight ? Number(weight) : null,
       humidity: kind === "BIG_BAG" && humidity ? Number(humidity) : null,
       description: description.trim() || null,
@@ -56,7 +76,7 @@ export function EntryForm({ entryId, initial, onSaved, onCancel }: Props) {
     const isCreate = !initial;
     const url = isCreate ? "/api/entries" : `/api/entries/${initial.id}`;
     const method = isCreate ? "POST" : "PATCH";
-    const body = isCreate ? { ...payload, ...(entryId ? { id: entryId } : {}) } : payload;
+    const body = isCreate ? { ...payload, id: resolvedId } : payload;
 
     const response = await fetch(url, {
       method,
@@ -78,18 +98,36 @@ export function EntryForm({ entryId, initial, onSaved, onCancel }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {requireManualId && !initial ? (
+        <Input
+          label="Identifiant (numéro du QR code)"
+          type="number"
+          inputMode="numeric"
+          value={manualId}
+          onChange={(e) => setManualId(e.target.value)}
+          placeholder="Ex. 42"
+          required
+        />
+      ) : null}
+
+      {entryId && !initial ? (
+        <p className="rounded-xl bg-stone-50 px-3 py-2 text-sm text-stone-600">
+          Identifiant : <strong>#{entryId}</strong>
+        </p>
+      ) : null}
+
       <Select
         label="Type d'entrée"
         value={kind}
         onChange={(e) => setKind(e.target.value as "BIG_BAG" | "OTHER")}
         options={[
-          { value: "BIG_BAG", label: "Gros sac" },
+          { value: "BIG_BAG", label: "Big bag" },
           { value: "OTHER", label: "Autre (bac métallique, etc.)" },
         ]}
       />
 
       <Input
-        label="Position (ex. A11)"
+        label="Emplacement (ex. A01, B15)"
         value={position}
         onChange={(e) => setPosition(e.target.value.toUpperCase())}
         placeholder="Optionnel"
@@ -98,7 +136,7 @@ export function EntryForm({ entryId, initial, onSaved, onCancel }: Props) {
       {kind === "BIG_BAG" ? (
         <>
           <Select
-            label="Type de céréale"
+            label="Type de graine"
             value={cerealType}
             onChange={(e) => setCerealType(e.target.value)}
             options={[
@@ -118,7 +156,15 @@ export function EntryForm({ entryId, initial, onSaved, onCancel }: Props) {
             />
           ) : null}
           <Input
-            label="Poids (kg)"
+            label="Année"
+            type="number"
+            inputMode="numeric"
+            value={year}
+            onChange={(e) => setYear(e.target.value)}
+            placeholder="Ex. 2024"
+          />
+          <Input
+            label="Poids net (kg)"
             type="number"
             inputMode="decimal"
             value={weight}

@@ -54,6 +54,7 @@ model Entry {
   locationColumn           Int?
   cerealType               CerealType?
   cerealTypeOther          String?     @db.VarChar(50)
+  year                     Int?
   weight                   Float?
   humidity                 Float?
   description              String?     @db.Text

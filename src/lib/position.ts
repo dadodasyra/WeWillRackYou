@@ -1,4 +1,8 @@
-import { WAREHOUSE, type WarehouseRow } from "./warehouse-config";
+import {
+  isValidSlot,
+  WAREHOUSE,
+  type WarehouseRow,
+} from "./warehouse-config";
 
 export type Position = {
   row: WarehouseRow;
@@ -12,27 +16,21 @@ export function formatPosition(position: Position): string {
 
 export function parsePosition(code: string): Position | null {
   const trimmed = code.trim().toUpperCase();
-  const match = trimmed.match(/^([A-H])([1-4])([1-9])$/);
+  const match = trimmed.match(/^([A-G])([0-2])([1-9])$/);
   if (!match) return null;
 
   const row = match[1] as WarehouseRow;
   const level = Number(match[2]);
   const column = Number(match[3]);
 
-  if (!WAREHOUSE.rows.includes(row)) return null;
-  if (level < 1 || level > WAREHOUSE.levels) return null;
-  if (column < 1 || column > WAREHOUSE.columns) return null;
+  if (!isValidSlot(row, level, column)) return null;
 
   return { row, level, column };
 }
 
 export function isValidPosition(position: Partial<Position>): position is Position {
-  if (!position.row || !position.level || !position.column) return false;
-  return (
-    WAREHOUSE.rows.includes(position.row) &&
-    position.level >= 1 &&
-    position.level <= WAREHOUSE.levels &&
-    position.column >= 1 &&
-    position.column <= WAREHOUSE.columns
-  );
+  if (!position.row || position.level === undefined || !position.column) return false;
+  return isValidSlot(position.row, position.level, position.column);
 }
+
+export { isValidSlot, WAREHOUSE };

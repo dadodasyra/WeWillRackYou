@@ -5,9 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { EntryForm } from "@/components/entries/EntryForm";
+import { EntryDetailCard } from "@/components/entries/EntryDetailCard";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { CEREAL_TYPE_LABELS } from "@/lib/cereal-types";
 import type { SerializedEntry } from "@/lib/validations";
 
 const WarehouseScene = dynamic(
@@ -131,12 +131,6 @@ function EntryPageContent() {
     );
   }
 
-  const cerealLabel = entry.cerealType
-    ? entry.cerealType === "AUTRE"
-      ? entry.cerealTypeOther ?? "Autre"
-      : CEREAL_TYPE_LABELS[entry.cerealType as keyof typeof CEREAL_TYPE_LABELS]
-    : null;
-
   return (
     <main className="mx-auto max-w-lg space-y-4 px-4 py-4">
       <header className="space-y-1">
@@ -174,30 +168,16 @@ function EntryPageContent() {
           onCancel={() => setEditing(false)}
         />
       ) : (
-        <section className="space-y-2 rounded-2xl border border-stone-200 bg-white p-4">
-          {entry.kind === "BIG_BAG" ? (
-            <>
-              <InfoRow label="Céréale" value={cerealLabel} />
-              <InfoRow label="Poids" value={entry.weight ? `${entry.weight} kg` : null} />
-              <InfoRow label="Humidité" value={entry.humidity ? `${entry.humidity} %` : null} />
-            </>
-          ) : null}
-          <InfoRow label="Description" value={entry.description} />
-          <p className="pt-2 text-xs text-stone-500">
-            Dernière modification par {entry.lastModifiedBy.username} le{" "}
-            {new Date(entry.updatedAt).toLocaleString("fr-FR")}
-          </p>
-          <div className="space-y-2 pt-2">
+        <>
+          <EntryDetailCard entry={entry} />
+          <div className="space-y-2">
             {entry.status === "ACTIVE" ? (
               <Button variant="secondary" onClick={() => setEditing(true)}>
                 Modifier
               </Button>
             ) : null}
-            <a href={`/api/entries/${entry.id}/qr`} target="_blank" rel="noreferrer">
-              <Button variant="secondary">Imprimer QR</Button>
-            </a>
           </div>
-        </section>
+        </>
       )}
 
       {!editing && entry.status === "ACTIVE" ? (
@@ -207,18 +187,22 @@ function EntryPageContent() {
             label="Position"
             value={position}
             onChange={(e) => setPosition(e.target.value.toUpperCase())}
-            placeholder="Ex. B23"
+            placeholder="Ex. B15"
           />
           <Button variant="secondary" onClick={() => setShowMap((v) => !v)}>
             {showMap ? "Masquer la carte" : "Choisir sur la carte"}
           </Button>
           {showMap ? (
             <WarehouseScene
-              level={1}
               compact
+              visibleLevels={[0, 1, 2]}
               occupiedMap={occupiedMap}
-              onSlotSelect={(pos) => {
-                if (pos) setPosition(pos);
+              onSlotSelect={({ position, entry }) => {
+                if (entry) {
+                  setPosition(position);
+                  return;
+                }
+                setPosition(position);
               }}
             />
           ) : null}
@@ -253,16 +237,18 @@ function EntryPageContent() {
           )}
         </section>
       ) : null}
-    </main>
-  );
-}
 
-function InfoRow({ label, value }: { label: string; value: string | null | undefined }) {
-  return (
-    <div className="flex justify-between gap-4 text-sm">
-      <span className="text-stone-500">{label}</span>
-      <span className="text-right text-stone-800">{value ?? "—"}</span>
-    </div>
+      <p className="text-center">
+        <a
+          href={`/api/entries/${entry.id}/qr`}
+          target="_blank"
+          rel="noreferrer"
+          className="text-sm text-stone-500 underline"
+        >
+          Réimprimer QR
+        </a>
+      </p>
+    </main>
   );
 }
 

@@ -93,6 +93,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
                 : null,
           }
         : {}),
+      ...(data.year !== undefined
+        ? { year: kind === "BIG_BAG" ? data.year : null }
+        : {}),
       ...(data.weight !== undefined
         ? { weight: kind === "BIG_BAG" ? data.weight : null }
         : {}),

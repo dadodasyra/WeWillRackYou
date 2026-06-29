@@ -6,11 +6,11 @@ export const entryKindSchema = z.enum(["BIG_BAG", "OTHER"]);
 export const cerealTypeSchema = z.enum(CEREAL_TYPES as [string, ...string[]]);
 
 const entryBaseSchema = z.object({
-  id: z.number().int().positive().optional(),
   kind: entryKindSchema,
   position: z.string().optional().nullable(),
   cerealType: cerealTypeSchema.optional().nullable(),
   cerealTypeOther: z.string().max(50).optional().nullable(),
+  year: z.number().int().min(1980).max(2100).optional().nullable(),
   weight: z.number().positive().optional().nullable(),
   humidity: z.number().min(0).max(100).optional().nullable(),
   description: z.string().max(2000).optional().nullable(),
@@ -30,7 +30,7 @@ function refineEntry(
     if (!parsed) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Position invalide (ex. A11)",
+        message: "Position invalide (ex. A01, B15)",
         path: ["position"],
       });
     }
@@ -44,10 +44,13 @@ function refineEntry(
   }
 }
 
-export const createEntrySchema = entryBaseSchema.superRefine(refineEntry);
+export const createEntrySchema = entryBaseSchema
+  .extend({
+    id: z.number().int().positive(),
+  })
+  .superRefine(refineEntry);
 
 export const updateEntrySchema = entryBaseSchema
-  .omit({ id: true })
   .partial()
   .extend({
     kind: entryKindSchema.optional(),
@@ -80,6 +83,7 @@ export type SerializedEntry = {
   position: string | null;
   cerealType: string | null;
   cerealTypeOther: string | null;
+  year: number | null;
   weight: number | null;
   humidity: number | null;
   description: string | null;

@@ -23,6 +23,7 @@ export function serializeEntry(entry: EntryWithUsers): SerializedEntry {
     position,
     cerealType: entry.cerealType,
     cerealTypeOther: entry.cerealTypeOther,
+    year: entry.year,
     weight: entry.weight,
     humidity: entry.humidity,
     description: entry.description,

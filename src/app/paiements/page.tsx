@@ -90,7 +90,7 @@ export default function PaiementsPage() {
                           : CEREAL_TYPE_LABELS[
                               entry.cerealType as keyof typeof CEREAL_TYPE_LABELS
                             ]
-                        : "Gros sac"
+                        : "Big bag"
                       : "Autre"}
                   </p>
                   <p className="text-xs text-stone-500">

@@ -59,13 +59,15 @@ export async function POST(request: NextRequest) {
   if (data.id) {
     const existing = await prisma.entry.findUnique({ where: { id: data.id } });
     if (existing) {
-      return jsonError("Cette entrée existe déjà");
+      return jsonError("Cet identifiant existe déjà");
     }
+  } else {
+    return jsonError("L'identifiant est obligatoire");
   }
 
   const entry = await prisma.entry.create({
     data: {
-      ...(data.id ? { id: data.id } : {}),
+      id: data.id,
       kind: data.kind as EntryKind,
       ...location,
       cerealType: data.kind === "BIG_BAG" ? (data.cerealType as CerealType | null) ?? null : null,
@@ -73,6 +75,7 @@ export async function POST(request: NextRequest) {
         data.kind === "BIG_BAG" && data.cerealType === "AUTRE"
           ? data.cerealTypeOther?.trim() ?? null
           : null,
+      year: data.kind === "BIG_BAG" ? data.year ?? null : null,
       weight: data.kind === "BIG_BAG" ? data.weight ?? null : null,
       humidity: data.kind === "BIG_BAG" ? data.humidity ?? null : null,
       description: data.description?.trim() ?? null,
