@@ -1,11 +1,17 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import { CEREAL_TYPE_LABELS, CEREAL_TYPES } from "@/lib/cereal-types";
 import type { SerializedEntry } from "@/lib/validations";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
+
+const WarehouseScene = dynamic(
+  () => import("@/components/warehouse/WarehouseScene").then((m) => m.WarehouseScene),
+  { ssr: false },
+);
 
 type Props = {
   /** ID imposé par scan QR (lecture seule). */
@@ -35,6 +41,25 @@ export function EntryForm({
   const [description, setDescription] = useState(initial?.description ?? "");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showMap, setShowMap] = useState(false);
+  const [entries, setEntries] = useState<SerializedEntry[]>([]);
+
+  const loadEntries = useCallback(async () => {
+    const response = await fetch("/api/entries?status=ACTIVE");
+    if (response.ok) setEntries(await response.json());
+  }, []);
+
+  useEffect(() => {
+    if (showMap) loadEntries();
+  }, [showMap, loadEntries]);
+
+  const occupiedMap = useMemo(() => {
+    const map = new Map<string, SerializedEntry>();
+    for (const entry of entries) {
+      if (entry.position) map.set(entry.position, entry);
+    }
+    return map;
+  }, [entries]);
 
   useEffect(() => {
     if (initial) {
@@ -132,6 +157,21 @@ export function EntryForm({
         onChange={(e) => setPosition(e.target.value.toUpperCase())}
         placeholder="Optionnel"
       />
+
+      <Button type="button" variant="secondary" onClick={() => setShowMap((v) => !v)}>
+        {showMap ? "Masquer la carte" : "Choisir sur la carte"}
+      </Button>
+      {showMap ? (
+        <WarehouseScene
+          compact
+          visibleLevels={[0, 1, 2]}
+          occupiedMap={occupiedMap}
+          selectedPosition={position.trim() || null}
+          onSlotSelect={({ position: pos, entry }) => {
+            if (!entry) setPosition(pos);
+          }}
+        />
+      ) : null}
 
       {kind === "BIG_BAG" ? (
         <>

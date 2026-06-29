@@ -59,6 +59,7 @@ export function getAisleCenterX(between: [WarehouseRow, WarehouseRow]): number {
 }
 
 export function getWarehouseBounds() {
+  const floor = getFloorBounds();
   const xs = WAREHOUSE.rows.map(getRowX);
   const minX = Math.min(...xs) - SLOT_SIZE / 2 - 0.3;
   const maxX = Math.max(...xs) + SLOT_SIZE / 2 + 0.3;
@@ -68,7 +69,39 @@ export function getWarehouseBounds() {
   const centerZ = (minZ + maxZ) / 2;
   const maxLevelY = getLevelY(WAREHOUSE.levels[WAREHOUSE.levels.length - 1]) + SLOT_SIZE / 2;
 
-  return { minX, maxX, minZ, maxZ, centerX, centerZ, maxLevelY };
+  return { minX, maxX, minZ, maxZ, centerX, centerZ, maxLevelY, floor };
+}
+
+/** Limites du sol (portes et murs alignés sur ces bords). */
+export function getFloorBounds() {
+  const xs = WAREHOUSE.rows.map(getRowX);
+  const innerMinX = Math.min(...xs) - SLOT_SIZE / 2;
+  const innerMaxX = Math.max(...xs) + SLOT_SIZE / 2;
+  const innerMinZ = getColumnZ(WAREHOUSE.fullColumns) - SLOT_SIZE / 2;
+  const innerMaxZ = getColumnZ(1) + SLOT_SIZE / 2;
+  const padX = 0.4;
+  const padBack = 0.4;
+  const padFront = 0.42;
+
+  const minX = innerMinX - padX;
+  const maxX = innerMaxX + padX;
+  const minZ = innerMinZ - padBack;
+  const maxZ = innerMaxZ + padFront;
+
+  return {
+    innerMinX,
+    innerMaxX,
+    innerMinZ,
+    innerMaxZ,
+    minX,
+    maxX,
+    minZ,
+    maxZ,
+    centerX: (minX + maxX) / 2,
+    centerZ: (minZ + maxZ) / 2,
+    width: maxX - minX,
+    depth: maxZ - minZ,
+  };
 }
 
 export function getDefaultCamera() {
@@ -79,19 +112,36 @@ export function getDefaultCamera() {
   };
 }
 
-/** Porte personnel — couloir F–G, côté avant. */
-export function getPersonnelDoorPlacement() {
-  const aisleX = getAisleCenterX(["F", "G"]);
-  const { maxZ } = getWarehouseBounds();
-  return { x: aisleX, z: maxZ + 0.05, width: 0.85 };
+/** Positions Z avant : lettres entre rangées et portes (observateur = +Z). */
+export function getFrontLayoutZ() {
+  const floor = getFloorBounds();
+  const frontGap = floor.maxZ - floor.innerMaxZ;
+  return {
+    labelZ: floor.innerMaxZ + frontGap * 0.42,
+    doorZ: floor.maxZ,
+  };
 }
 
-/** Grande porte roulante — mur avant (côté observateur), entre C et D. */
+/** Porte personnel — couloir F–G, devant les lettres de rangée. */
+export function getPersonnelDoorPlacement() {
+  const aisleX = getAisleCenterX(["F", "G"]);
+  const { doorZ } = getFrontLayoutZ();
+  const width = 0.85;
+  return {
+    hingeX: aisleX - width / 2,
+    hingeZ: doorZ,
+    width,
+    leafLength: width * 0.92,
+  };
+}
+
+/** Grande porte roulante — bord avant du sol, entre C et D. */
 export function getRollingDoorPlacement() {
   const aisleX = getAisleCenterX(["C", "D"]);
-  const { maxX, minX, maxZ } = getWarehouseBounds();
-  const spanX = (maxX - minX) * 0.22;
-  return { x: aisleX, z: maxZ + 0.02, width: spanX };
+  const { doorZ } = getFrontLayoutZ();
+  const floor = getFloorBounds();
+  const spanX = (floor.innerMaxX - floor.innerMinX) * 0.2;
+  return { x: aisleX, z: doorZ, width: spanX };
 }
 
 export function getPostDividerZ(leftColumn: number, rightColumn: number): number {

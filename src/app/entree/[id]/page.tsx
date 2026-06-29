@@ -197,12 +197,9 @@ function EntryPageContent() {
               compact
               visibleLevels={[0, 1, 2]}
               occupiedMap={occupiedMap}
-              onSlotSelect={({ position, entry }) => {
-                if (entry) {
-                  setPosition(position);
-                  return;
-                }
-                setPosition(position);
+              selectedPosition={position.trim() || null}
+              onSlotSelect={({ position: pos, entry }) => {
+                if (!entry) setPosition(pos);
               }}
             />
           ) : null}

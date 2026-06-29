@@ -4,10 +4,13 @@ import { Canvas, useThree } from "@react-three/fiber";
 import { Line, OrbitControls, Text } from "@react-three/drei";
 import type { ReactNode } from "react";
 import { useEffect, useMemo } from "react";
+import * as THREE from "three";
 import { iterWarehouseSlots, WAREHOUSE, type WarehouseRow } from "@/lib/warehouse-config";
 import {
   getColumnsForRow,
   getDefaultCamera,
+  getFloorBounds,
+  getFrontLayoutZ,
   getPersonnelDoorPlacement,
   getPostDividersForRow,
   getRollingDoorPlacement,
@@ -34,6 +37,14 @@ type Props = {
   selectedPosition?: string | null;
   onSlotSelect: (selection: SlotSelection) => void;
   compact?: boolean;
+};
+
+const WALL_MAT = {
+  color: "#d6d3d1",
+  transparent: true,
+  opacity: 0.14,
+  depthWrite: false,
+  side: THREE.DoubleSide as THREE.Side,
 };
 
 function CameraSetup({ target }: { target: [number, number, number] }) {
@@ -75,24 +86,11 @@ function Slot({
   if (selected) {
     color = SELECTED_COLOR;
     emissive = SELECTED_EMISSIVE;
-    emissiveIntensity = 0.45;
+    emissiveIntensity = 0.55;
   }
 
   return (
-    <mesh
-      position={[x, y, z]}
-      onClick={(e) => {
-        e.stopPropagation();
-        onSelect();
-      }}
-      onPointerOver={(e) => {
-        e.stopPropagation();
-        document.body.style.cursor = "pointer";
-      }}
-      onPointerOut={() => {
-        document.body.style.cursor = "auto";
-      }}
-    >
+    <mesh position={[x, y, z]} renderOrder={selected ? 2 : 0}>
       <boxGeometry args={[SLOT_SIZE, SLOT_SIZE, SLOT_SIZE]} />
       <meshStandardMaterial
         color={color}
@@ -100,14 +98,30 @@ function Slot({
         emissiveIntensity={emissiveIntensity}
         transparent={!occupied && !selected}
         opacity={occupied || selected ? 1 : 0.9}
+        depthWrite
       />
+      <mesh
+        onClick={(e) => {
+          e.stopPropagation();
+          onSelect();
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          document.body.style.cursor = "pointer";
+        }}
+        onPointerOut={() => {
+          document.body.style.cursor = "auto";
+        }}
+      >
+        <boxGeometry args={[SLOT_SIZE * 1.02, SLOT_SIZE * 1.02, SLOT_SIZE * 1.02]} />
+        <meshBasicMaterial visible={false} />
+      </mesh>
     </mesh>
   );
 }
 
 function RowLabels() {
-  const { maxZ } = getWarehouseBounds();
-  const labelZ = maxZ + 0.4;
+  const { labelZ } = getFrontLayoutZ();
 
   return (
     <>
@@ -117,12 +131,13 @@ function RowLabels() {
         return (
           <Text
             key={row}
-            position={[x, 0.04, labelZ]}
+            position={[x, 0.06, labelZ]}
             rotation={[-Math.PI / 2, 0, 0]}
             fontSize={0.42}
             color="#44403c"
             anchorX="center"
             anchorY="middle"
+            renderOrder={5}
           >
             {row}
           </Text>
@@ -132,34 +147,36 @@ function RowLabels() {
   );
 }
 
-/** Symbole de porte au sol — ouverture vers l'intérieur (-Z). */
+/** Porte personnel — ouverture vers l'intérieur et vers la droite (+X). */
 function FloorPersonnelDoor() {
   const door = getPersonnelDoorPlacement();
-  const y = 0.04;
-  const hingeX = door.x + door.width / 2;
-  const hingeZ = door.z;
-  const leafLength = door.width * 0.9;
+  const y = 0.05;
+  const { hingeX, hingeZ, width, leafLength } = door;
+  const jambEndX = hingeX + width;
 
   const arcPoints: [number, number, number][] = [];
-  const segments = 14;
+  const segments = 16;
   for (let i = 0; i <= segments; i++) {
     const angle = (i / segments) * (Math.PI / 2);
     arcPoints.push([
-      hingeX - Math.sin(angle) * leafLength,
+      hingeX + Math.sin(angle) * leafLength,
       y,
       hingeZ - Math.cos(angle) * leafLength,
     ]);
   }
 
-  const leafEndX = hingeX - Math.sin(Math.PI / 2.2) * leafLength;
-  const leafEndZ = hingeZ - Math.cos(Math.PI / 2.2) * leafLength;
+  const leafEnd: [number, number, number] = [
+    hingeX + leafLength,
+    y,
+    hingeZ,
+  ];
 
   return (
-    <group>
+    <group renderOrder={6}>
       <Line
         points={[
-          [hingeX, y, hingeZ - door.width / 2],
-          [hingeX, y, hingeZ + door.width / 2],
+          [hingeX, y, hingeZ],
+          [jambEndX, y, hingeZ],
         ]}
         color="#57534e"
         lineWidth={2}
@@ -168,7 +185,7 @@ function FloorPersonnelDoor() {
       <Line
         points={[
           [hingeX, y, hingeZ],
-          [leafEndX, y, leafEndZ],
+          leafEnd,
         ]}
         color="#44403c"
         lineWidth={2}
@@ -177,14 +194,15 @@ function FloorPersonnelDoor() {
   );
 }
 
-/** Grande porte roulante — marquage au sol sur le mur avant, entre C et D. */
+/** Grande porte roulante — sur le bord avant du sol. */
 function FloorRollingDoor() {
   const door = getRollingDoorPlacement();
-  const y = 0.035;
+  const y = 0.05;
   const half = door.width / 2;
+  const innerOffset = 0.12;
 
   return (
-    <group position={[door.x, y, door.z]}>
+    <group position={[door.x, y, door.z]} renderOrder={6}>
       <Line
         points={[
           [-half, 0, 0],
@@ -195,8 +213,8 @@ function FloorRollingDoor() {
       />
       <Line
         points={[
-          [-half, 0, -0.12],
-          [half, 0, -0.12],
+          [-half, 0, -innerOffset],
+          [half, 0, -innerOffset],
         ]}
         color="#57534e"
         lineWidth={2.5}
@@ -205,8 +223,8 @@ function FloorRollingDoor() {
         <Line
           key={offset}
           points={[
-            [offset * door.width, 0, -0.12],
-            [offset * door.width, 0, 0.08],
+            [offset * door.width, 0, -innerOffset],
+            [offset * door.width, 0, 0.02],
           ]}
           color="#a8a29e"
           lineWidth={1.5}
@@ -227,7 +245,7 @@ function RowPosts() {
         return getPostDividersForRow(row).map((z) => (
           <mesh key={`${row}-${z}`} position={[x, postHeight / 2, z]}>
             <boxGeometry args={[0.1, postHeight, 0.1]} />
-            <meshStandardMaterial color="#a8a29e" opacity={0.7} transparent />
+            <meshStandardMaterial color="#a8a29e" opacity={0.7} transparent depthWrite={false} />
           </mesh>
         ));
       })}
@@ -243,16 +261,21 @@ function AisleMarkers() {
     ["D", "E"],
     ["F", "G"],
   ];
-  const { minZ, maxZ } = getWarehouseBounds();
+  const floor = getFloorBounds();
+  const aisleDepth = floor.innerMaxZ - floor.innerMinZ;
 
   return (
     <>
       {aisles.map(([a, b]) => {
         const x = (getSlotPosition(a, 1, 0).x + getSlotPosition(b, 1, 0).x) / 2;
         return (
-          <mesh key={`${a}-${b}`} position={[x, y, (minZ + maxZ) / 2]} rotation={[-Math.PI / 2, 0, 0]}>
-            <planeGeometry args={[AISLE_PLANE_WIDTH(a, b), Math.abs(maxZ - minZ) * 0.92]} />
-            <meshStandardMaterial color="#d6d3d1" opacity={0.35} transparent />
+          <mesh
+            key={`${a}-${b}`}
+            position={[x, y, (floor.innerMinZ + floor.innerMaxZ) / 2]}
+            rotation={[-Math.PI / 2, 0, 0]}
+          >
+            <planeGeometry args={[AISLE_PLANE_WIDTH(a, b), aisleDepth * 0.96]} />
+            <meshStandardMaterial color="#d6d3d1" opacity={0.3} transparent depthWrite={false} />
           </mesh>
         );
       })}
@@ -265,30 +288,33 @@ function AISLE_PLANE_WIDTH(a: WarehouseRow, b: WarehouseRow): number {
 }
 
 function WallsAndFloor() {
-  const { minX, maxX, minZ, maxZ, centerX, centerZ, maxLevelY } = getWarehouseBounds();
+  const { maxLevelY } = getWarehouseBounds();
+  const floor = getFloorBounds();
   const wallHeight = maxLevelY + 0.5;
-  const floorW = maxX - minX + 2;
-  const floorD = maxZ - minZ + 1.5;
-  const wallMat = { color: "#d6d3d1", transparent: true, opacity: 0.22 };
-  const trim = 0.4;
+  const t = 0.07;
+  const zMid = (floor.minZ + floor.maxZ) / 2;
 
   return (
     <>
-      <mesh position={[centerX, -0.05, centerZ]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[floorW, floorD]} />
+      <mesh
+        position={[floor.centerX, -0.05, floor.centerZ]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        receiveShadow
+      >
+        <planeGeometry args={[floor.width, floor.depth]} />
         <meshStandardMaterial color="#e7e5e4" />
       </mesh>
-      <mesh position={[minX - 0.25, wallHeight / 2, centerZ]}>
-        <boxGeometry args={[0.08, wallHeight, floorD - trim * 2]} />
-        <meshStandardMaterial {...wallMat} />
+      <mesh position={[floor.minX + t / 2, wallHeight / 2, zMid]} renderOrder={-1}>
+        <boxGeometry args={[t, wallHeight, floor.depth]} />
+        <meshStandardMaterial {...WALL_MAT} />
       </mesh>
-      <mesh position={[maxX + 0.25, wallHeight / 2, centerZ]}>
-        <boxGeometry args={[0.08, wallHeight, floorD - trim * 2]} />
-        <meshStandardMaterial {...wallMat} />
+      <mesh position={[floor.maxX - t / 2, wallHeight / 2, zMid]} renderOrder={-1}>
+        <boxGeometry args={[t, wallHeight, floor.depth]} />
+        <meshStandardMaterial {...WALL_MAT} />
       </mesh>
-      <mesh position={[centerX, wallHeight / 2, minZ - 0.25]}>
-        <boxGeometry args={[floorW - trim * 2, wallHeight, 0.08]} />
-        <meshStandardMaterial {...wallMat} />
+      <mesh position={[floor.centerX, wallHeight / 2, floor.minZ + t / 2]} renderOrder={-1}>
+        <boxGeometry args={[floor.width, wallHeight, t]} />
+        <meshStandardMaterial {...WALL_MAT} />
       </mesh>
     </>
   );
@@ -340,10 +366,10 @@ function WarehouseGrid({
       <WallsAndFloor />
       <AisleMarkers />
       <RowPosts />
+      {slots}
+      <RowLabels />
       <FloorRollingDoor />
       <FloorPersonnelDoor />
-      <RowLabels />
-      {slots}
       <OrbitControls
         enablePan
         enableZoom
@@ -409,7 +435,13 @@ export function WarehouseScene({
           : "h-[55vh] rounded-2xl overflow-hidden border border-stone-200"
       }
     >
-      <Canvas camera={{ position: camera.position, fov: 42 }}>
+      <Canvas
+        camera={{ position: camera.position, fov: 42 }}
+        gl={{ antialias: true, alpha: false }}
+        onCreated={({ gl }) => {
+          gl.setClearColor("#fafaf9");
+        }}
+      >
         <WarehouseGrid
           occupiedMap={occupiedMap}
           visibleLevels={visibleLevels}
