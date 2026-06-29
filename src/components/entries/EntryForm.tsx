@@ -147,12 +147,17 @@ export function EntryForm({
         ]}
       />
 
-      <Input
-        label="Emplacement (ex. A01, B15)"
-        value={position}
-        onChange={(e) => setPosition(e.target.value.toUpperCase())}
-        placeholder="Optionnel"
-      />
+      <div className="space-y-1">
+        <Input
+          label="Emplacement"
+          value={position}
+          onChange={(e) => setPosition(e.target.value.toUpperCase())}
+          placeholder="Ex. A01, B15"
+        />
+        <p className="text-xs text-stone-500">
+          Format : rangée + niveau + colonne (ex. A01 = rangée A, niveau 0, colonne 1).
+        </p>
+      </div>
 
       <Button type="button" variant="secondary" onClick={() => setShowMap((v) => !v)}>
         {showMap ? "Masquer la carte" : "Choisir sur la carte"}

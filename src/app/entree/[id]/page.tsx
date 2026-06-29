@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { EntryForm } from "@/components/entries/EntryForm";
 import { EntryDetailCard } from "@/components/entries/EntryDetailCard";
+import { DecommissionModal } from "@/components/entries/DecommissionModal";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import type { SerializedEntry } from "@/lib/validations";
@@ -25,8 +26,7 @@ function EntryPageContent() {
   const [creating, setCreating] = useState(false);
   const [position, setPosition] = useState("");
   const [showMap, setShowMap] = useState(false);
-  const [forKikiriki, setForKikiriki] = useState(false);
-  const [confirmDecom, setConfirmDecom] = useState(false);
+  const [showDecomModal, setShowDecomModal] = useState(false);
   const [message, setMessage] = useState("");
   const [entries, setEntries] = useState<SerializedEntry[]>([]);
 
@@ -87,21 +87,6 @@ function EntryPageContent() {
     loadEntries();
   }
 
-  async function handleDecommission() {
-    if (!entry) return;
-    const response = await fetch(`/api/entries/${entry.id}/decommission`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ forKikiriki }),
-    });
-    if (!response.ok) {
-      const data = await response.json();
-      setMessage(data.error ?? "Erreur");
-      return;
-    }
-    router.push(forKikiriki ? "/paiements" : "/");
-  }
-
   if (entry === undefined) {
     return (
       <main className="px-4 py-8 text-center text-stone-500">Chargement...</main>
@@ -157,24 +142,34 @@ function EntryPageContent() {
       ) : null}
 
       {editing ? (
-        <EntryForm
-          initial={entry}
-          onSaved={(saved) => {
-            setEntry(saved);
-            setEditing(false);
-            setMessage("Modifications enregistrées.");
-            loadEntries();
-          }}
-          onCancel={() => setEditing(false)}
-        />
+        <>
+          <EntryForm
+            initial={entry}
+            onSaved={(saved) => {
+              setEntry(saved);
+              setEditing(false);
+              setMessage("Modifications enregistrées.");
+              loadEntries();
+            }}
+            onCancel={() => setEditing(false)}
+          />
+          <Button variant="danger" onClick={() => setShowDecomModal(true)}>
+            Décommissionner
+          </Button>
+        </>
       ) : (
         <>
           <EntryDetailCard entry={entry} />
           <div className="space-y-2">
             {entry.status === "ACTIVE" ? (
-              <Button variant="secondary" onClick={() => setEditing(true)}>
-                Modifier
-              </Button>
+              <>
+                <Button variant="secondary" onClick={() => setEditing(true)}>
+                  Modifier
+                </Button>
+                <Button variant="danger" onClick={() => setShowDecomModal(true)}>
+                  Décommissionner
+                </Button>
+              </>
             ) : null}
           </div>
         </>
@@ -183,12 +178,17 @@ function EntryPageContent() {
       {!editing && entry.status === "ACTIVE" ? (
         <section className="space-y-3 rounded-2xl border border-stone-200 bg-white p-4">
           <h2 className="font-semibold text-stone-800">Déplacer</h2>
-          <Input
-            label="Position"
-            value={position}
-            onChange={(e) => setPosition(e.target.value.toUpperCase())}
-            placeholder="Ex. B15"
-          />
+          <div className="space-y-1">
+            <Input
+              label="Position"
+              value={position}
+              onChange={(e) => setPosition(e.target.value.toUpperCase())}
+              placeholder="Ex. B15"
+            />
+            <p className="text-xs text-stone-500">
+              Format : rangée + niveau + colonne (ex. A01 = rangée A, niveau 0, colonne 1).
+            </p>
+          </div>
           <Button variant="secondary" onClick={() => setShowMap((v) => !v)}>
             {showMap ? "Masquer la carte" : "Choisir sur la carte"}
           </Button>
@@ -198,8 +198,8 @@ function EntryPageContent() {
               visibleLevels={[0, 1, 2]}
               occupiedMap={occupiedMap}
               selectedPosition={position.trim() || null}
-              onSlotSelect={({ position: pos, entry }) => {
-                if (!entry) setPosition(pos);
+              onSlotSelect={({ position: pos, entry: slotEntry }) => {
+                if (!slotEntry) setPosition(pos);
               }}
             />
           ) : null}
@@ -207,33 +207,15 @@ function EntryPageContent() {
         </section>
       ) : null}
 
-      {!editing && entry.status === "ACTIVE" ? (
-        <section className="space-y-3 rounded-2xl border border-red-200 bg-red-50 p-4">
-          <h2 className="font-semibold text-red-800">Décommissionner</h2>
-          {!confirmDecom ? (
-            <Button variant="danger" onClick={() => setConfirmDecom(true)}>
-              Décommissionner cette entrée
-            </Button>
-          ) : (
-            <>
-              <label className="flex items-center gap-2 text-sm text-stone-700">
-                <input
-                  type="checkbox"
-                  checked={forKikiriki}
-                  onChange={(e) => setForKikiriki(e.target.checked)}
-                />
-                Pour Ferme du kikiriki (liste de paiement)
-              </label>
-              <Button variant="danger" onClick={handleDecommission}>
-                Confirmer la décommission
-              </Button>
-              <Button variant="secondary" onClick={() => setConfirmDecom(false)}>
-                Annuler
-              </Button>
-            </>
-          )}
-        </section>
-      ) : null}
+      <DecommissionModal
+        entry={entry.status === "ACTIVE" ? entry : null}
+        open={showDecomModal && entry.status === "ACTIVE"}
+        onClose={() => setShowDecomModal(false)}
+        onSuccess={() => {
+          setShowDecomModal(false);
+          setEditing(false);
+        }}
+      />
 
       <p className="text-center">
         <a

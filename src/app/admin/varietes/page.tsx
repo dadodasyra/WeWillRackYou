@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/Button";
 import { ColorInput } from "@/components/ui/ColorInput";
 import { Input } from "@/components/ui/Input";
 
+import type { SerializedEntry } from "@/lib/validations";
+
 type VarietyRow = {
   id: string;
   name: string;
@@ -23,10 +25,15 @@ export default function AdminVarietesPage() {
   const [error, setError] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [reordering, setReordering] = useState(false);
+  const [entries, setEntries] = useState<SerializedEntry[]>([]);
 
   const load = useCallback(async () => {
-    const response = await fetch("/api/big-bag-varieties?all=1");
-    if (response.ok) setVarieties(await response.json());
+    const [varietiesRes, entriesRes] = await Promise.all([
+      fetch("/api/big-bag-varieties?all=1"),
+      fetch("/api/entries?status=ACTIVE"),
+    ]);
+    if (varietiesRes.ok) setVarieties(await varietiesRes.json());
+    if (entriesRes.ok) setEntries(await entriesRes.json());
   }, []);
 
   useEffect(() => {
@@ -42,6 +49,22 @@ export default function AdminVarietesPage() {
     () => varieties.filter((v) => !v.isActive).sort((a, b) => a.name.localeCompare(b.name)),
     [varieties],
   );
+
+  const weightByVarietyId = useMemo(() => {
+    const totals = new Map<string, number>();
+    for (const entry of entries) {
+      if (entry.kind !== "BIG_BAG" || !entry.bigBagVariety?.id || entry.weight == null) continue;
+      const id = entry.bigBagVariety.id;
+      totals.set(id, (totals.get(id) ?? 0) + entry.weight);
+    }
+    return totals;
+  }, [entries]);
+
+  function formatVarietyWeight(varietyId: string): string | null {
+    const total = weightByVarietyId.get(varietyId);
+    if (total == null || total <= 0) return null;
+    return `${total % 1 === 0 ? total : total.toFixed(1)} kg`;
+  }
 
   async function handleCreate(event: FormEvent) {
     event.preventDefault();
@@ -224,6 +247,11 @@ export default function AdminVarietesPage() {
             ) : null}
             <div className="min-w-0 flex-1">
               <VarietyOptionContent variety={variety} />
+              {formatVarietyWeight(variety.id) ? (
+                <p className="mt-0.5 text-xs text-stone-500">
+                  {formatVarietyWeight(variety.id)} en stock
+                </p>
+              ) : null}
             </div>
             <div className="flex shrink-0 gap-1">
               <Button

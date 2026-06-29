@@ -23,10 +23,10 @@ export function isDarkColor(hex: string): boolean {
 }
 
 export function getStripeRgba(hex: string): string {
-  return isDarkColor(hex) ? "rgba(255, 255, 255, 0.62)" : "rgba(0, 0, 0, 0.42)";
+  return isDarkColor(hex) ? "rgba(255, 255, 255, 0.38)" : "rgba(0, 0, 0, 0.28)";
 }
 
-/** Pastille CSS avec rayures diagonales optionnelles. */
+/** Pastille CSS avec fines rayures diagonales (couleur dominante). */
 export function varietySwatchStyle({
   color,
   isBarred = false,
@@ -46,9 +46,9 @@ export function varietySwatchStyle({
     backgroundImage: `repeating-linear-gradient(
       -45deg,
       transparent,
-      transparent 3px,
-      ${stripe} 3px,
-      ${stripe} 5px
+      transparent 7px,
+      ${stripe} 7px,
+      ${stripe} 8px
     )`,
     ...(size ? { width: size, height: size } : {}),
   };
@@ -56,16 +56,46 @@ export function varietySwatchStyle({
 
 const textureCache = new Map<string, THREE.CanvasTexture>();
 
-/** Texture Three.js avec rayures diagonales pour les variétés « barrées ». */
+function createCanvasTexture(canvas: HTMLCanvasElement): THREE.CanvasTexture {
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(1, 1);
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.generateMipmaps = true;
+  texture.needsUpdate = true;
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+function drawDiagonalStripes(
+  ctx: CanvasRenderingContext2D,
+  size: number,
+  stripeColor: string,
+  lineWidth: number,
+  step: number,
+) {
+  ctx.strokeStyle = stripeColor;
+  ctx.lineWidth = lineWidth;
+  for (let offset = -size; offset < size * 2; offset += step) {
+    ctx.beginPath();
+    ctx.moveTo(offset, 0);
+    ctx.lineTo(offset + size, size);
+    ctx.stroke();
+  }
+}
+
+/** Texture Three.js — rayures visibles à distance (peu de répétitions sur la face). */
 export function getStripedVarietyTexture(color: string, isBarred: boolean): THREE.CanvasTexture | null {
   if (!isBarred) return null;
 
   const dark = isDarkColor(color);
-  const key = `${color.toLowerCase()}-${dark ? "light" : "dark"}-stripes`;
+  const key = `v5-${color.toLowerCase()}-${dark ? "w" : "b"}`;
   const cached = textureCache.get(key);
   if (cached) return cached;
 
-  const size = 64;
+  const size = 128;
   const canvas = document.createElement("canvas");
   canvas.width = size;
   canvas.height = size;
@@ -75,20 +105,15 @@ export function getStripedVarietyTexture(color: string, isBarred: boolean): THRE
   ctx.fillStyle = color;
   ctx.fillRect(0, 0, size, size);
 
-  ctx.strokeStyle = dark ? "rgba(255, 255, 255, 0.62)" : "rgba(0, 0, 0, 0.42)";
-  ctx.lineWidth = 4;
-  for (let offset = -size; offset < size * 2; offset += 10) {
-    ctx.beginPath();
-    ctx.moveTo(offset, 0);
-    ctx.lineTo(offset + size, size);
-    ctx.stroke();
-  }
+  drawDiagonalStripes(
+    ctx,
+    size,
+    dark ? "rgba(255, 255, 255, 0.52)" : "rgba(0, 0, 0, 0.38)",
+    3,
+    18,
+  );
 
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(2, 2);
-  texture.needsUpdate = true;
+  const texture = createCanvasTexture(canvas);
   textureCache.set(key, texture);
   return texture;
 }

@@ -36,6 +36,7 @@ type Props = {
   occupiedMap: Map<string, SerializedEntry>;
   visibleLevels?: number[];
   selectedPosition?: string | null;
+  highlightVarietyId?: string | null;
   onSlotSelect: (selection: SlotSelection) => void;
   compact?: boolean;
 };
@@ -61,22 +62,32 @@ function Slot({
   level,
   entry,
   selected,
+  highlightVarietyId,
   onSelect,
 }: {
   positionCode: string;
   level: number;
   entry?: SerializedEntry;
   selected: boolean;
+  highlightVarietyId?: string | null;
   onSelect: () => void;
 }) {
   const occupied = !!entry;
   const variety = entry?.bigBagVariety ?? null;
   const colors = LEVEL_COLORS[level] ?? LEVEL_COLORS[0];
 
-  const stripedTexture = useMemo(() => {
-    if (!variety?.isBarred) return null;
+  const filterActive = Boolean(highlightVarietyId);
+  const slotMatchesFilter =
+    filterActive && occupied && variety?.id === highlightVarietyId;
+  const isDimmedEmpty = filterActive && !occupied && !selected;
+  const isDimmedOccupied = filterActive && occupied && !slotMatchesFilter && !selected;
+
+  const stripeTexture = useMemo(() => {
+    if (selected || !variety?.isBarred || isDimmedEmpty || isDimmedOccupied) return null;
     return getStripedVarietyTexture(variety.color, true);
-  }, [variety?.color, variety?.isBarred]);
+  }, [variety, isDimmedEmpty, isDimmedOccupied, selected]);
+
+  const useStripeMap = !!stripeTexture && !selected;
 
   const match = positionCode.match(/^([A-G])([0-2])([1-9])$/);
   if (!match) return null;
@@ -90,30 +101,52 @@ function Slot({
   let color = occupied ? colors.occupied : colors.empty;
   let emissive = occupied ? "#14532d" : "#000000";
   let emissiveIntensity = occupied ? 0.15 : 0;
+  let opacity = occupied || selected ? 1 : 0.9;
 
-  if (occupied && variety) {
+  if (occupied && variety && !isDimmedEmpty && !isDimmedOccupied && !useStripeMap) {
     color = variety.color;
     emissive = getVarietyEmissive(variety.color);
     emissiveIntensity = 0.25;
+  }
+
+  if (isDimmedEmpty) {
+    color = colors.empty;
+    emissive = "#000000";
+    emissiveIntensity = 0;
+    opacity = 0.1;
+  }
+
+  if (isDimmedOccupied) {
+    color = "#a8a29e";
+    emissive = "#000000";
+    emissiveIntensity = 0;
+    opacity = 0.65;
+  }
+
+  if (useStripeMap) {
+    color = "#ffffff";
+    emissive = "#000000";
+    emissiveIntensity = 0;
   }
 
   if (selected) {
     color = SELECTED_COLOR;
     emissive = SELECTED_EMISSIVE;
     emissiveIntensity = 0.55;
+    opacity = 1;
   }
 
   return (
-    <mesh position={[x, y, z]} renderOrder={selected ? 2 : 0}>
+    <mesh position={[x, y, z]} renderOrder={selected ? 2 : isDimmedOccupied ? -1 : 0}>
       <boxGeometry args={[SLOT_SIZE, SLOT_SIZE, SLOT_SIZE]} />
       <meshStandardMaterial
-        color={stripedTexture ? "#ffffff" : color}
-        map={stripedTexture}
+        color={color}
+        map={useStripeMap ? stripeTexture : undefined}
         emissive={emissive}
         emissiveIntensity={emissiveIntensity}
-        transparent={!occupied && !selected}
-        opacity={occupied || selected ? 1 : 0.9}
-        depthWrite
+        transparent={opacity < 1}
+        opacity={opacity}
+        depthWrite={opacity > 0.35}
       />
       <mesh
         onClick={(e) => {
@@ -358,6 +391,7 @@ function WarehouseGrid({
   occupiedMap,
   visibleLevels,
   selectedPosition,
+  highlightVarietyId,
   onSlotSelect,
 }: Props) {
   const visibleSet = useMemo(() => new Set(visibleLevels), [visibleLevels]);
@@ -378,6 +412,7 @@ function WarehouseGrid({
           level={level}
           entry={entry}
           selected={selectedPosition === position}
+          highlightVarietyId={highlightVarietyId}
           onSelect={() =>
             onSlotSelect({
               position,
@@ -389,7 +424,7 @@ function WarehouseGrid({
       );
     }
     return items;
-  }, [occupiedMap, onSlotSelect, visibleSet, selectedPosition]);
+  }, [occupiedMap, onSlotSelect, visibleSet, selectedPosition, highlightVarietyId]);
 
   return (
     <>
@@ -444,7 +479,7 @@ export function LevelLegend({
               className="inline-block h-3 w-3 rounded-sm"
               style={{ backgroundColor: active ? color : "#d6d3d1" }}
             />
-            Niveau {level}
+            Niv. {level}
           </button>
         );
       })}
@@ -456,6 +491,7 @@ export function WarehouseScene({
   occupiedMap,
   visibleLevels = [0, 1, 2],
   selectedPosition,
+  highlightVarietyId = null,
   onSlotSelect,
   compact,
 }: Props) {
@@ -480,6 +516,7 @@ export function WarehouseScene({
           occupiedMap={occupiedMap}
           visibleLevels={visibleLevels}
           selectedPosition={selectedPosition}
+          highlightVarietyId={highlightVarietyId}
           onSlotSelect={onSlotSelect}
           compact={compact}
         />

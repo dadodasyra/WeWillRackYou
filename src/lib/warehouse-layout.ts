@@ -140,13 +140,13 @@ export function getPersonnelDoorPlacement() {
   };
 }
 
-/** Grande porte roulante — bord avant du sol, entre C et D. */
+/** Grande porte roulante — devant le bord avant du sol, entre C et D. */
 export function getRollingDoorPlacement() {
   const aisleX = getAisleCenterX(["C", "D"]);
-  const { doorZ } = getFrontLayoutZ();
   const floor = getFloorBounds();
+  const frontGap = floor.maxZ - floor.innerMaxZ;
   const spanX = (floor.innerMaxX - floor.innerMinX) * 0.2;
-  return { x: aisleX, z: doorZ, width: spanX };
+  return { x: aisleX, z: floor.maxZ + frontGap * 0.4, width: spanX };
 }
 
 export function getPostDividerZ(leftColumn: number, rightColumn: number): number {
