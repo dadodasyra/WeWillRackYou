@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum EntryKind {
+  BIG_BAG
+  OTHER
+}
+
+enum CerealType {
+  BLE
+  ORGE
+  MAIS
+  AVOINE
+  COLZA
+  TOURNESOL
+  POIS
+  FEVEROLE
+  AUTRE
+}
+
+enum EntryStatus {
+  ACTIVE
+  DECOMMISSIONED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  role         Role     @default(USER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  createdEntries  Entry[] @relation("CreatedEntries")
+  modifiedEntries Entry[] @relation("ModifiedEntries")
+}
+
+model Entry {
+  id                       Int         @id @default(autoincrement())
+  kind                     EntryKind
+  locationRow              String?
+  locationLevel            Int?
+  locationColumn           Int?
+  cerealType               CerealType?
+  cerealTypeOther          String?     @db.VarChar(50)
+  weight                   Float?
+  humidity                 Float?
+  description              String?     @db.Text
+  status                   EntryStatus @default(ACTIVE)
+  decommissionForKikiriki  Boolean     @default(false)
+  isPaid                   Boolean     @default(false)
+  decommissionedAt         DateTime?
+  createdAt                DateTime    @default(now())
+  updatedAt                DateTime    @updatedAt
+
+  createdById      String
+  lastModifiedById String
+  createdBy        User   @relation("CreatedEntries", fields: [createdById], references: [id])
+  lastModifiedBy   User   @relation("ModifiedEntries", fields: [lastModifiedById], references: [id])
+
+  @@index([status])
+  @@index([decommissionForKikiriki, decommissionedAt])
+  @@index([locationRow, locationLevel, locationColumn])
+}
