@@ -45,9 +45,13 @@ const entryBaseSchema = z.object({
 
 function refineEntry(
   data: {
+    kind?: "BIG_BAG" | "OTHER";
     position?: string | null;
+    bigBagVarietyId?: string | null;
+    year?: number | null;
   },
   ctx: z.RefinementCtx,
+  options?: { requireBigBagFields?: boolean },
 ) {
   if (data.position) {
     const parsed = parsePosition(data.position);
@@ -59,13 +63,30 @@ function refineEntry(
       });
     }
   }
+
+  if (options?.requireBigBagFields && data.kind === "BIG_BAG") {
+    if (!data.bigBagVarietyId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Le type de graine est obligatoire",
+        path: ["bigBagVarietyId"],
+      });
+    }
+    if (data.year == null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "L'année est obligatoire",
+        path: ["year"],
+      });
+    }
+  }
 }
 
 export const createEntrySchema = entryBaseSchema
   .extend({
     id: z.number().int().positive(),
   })
-  .superRefine(refineEntry);
+  .superRefine((data, ctx) => refineEntry(data, ctx, { requireBigBagFields: true }));
 
 export const updateEntrySchema = entryBaseSchema
   .partial()

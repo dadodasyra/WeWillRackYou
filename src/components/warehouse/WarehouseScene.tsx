@@ -1,9 +1,9 @@
 "use client";
 
-import { Canvas, useThree } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Line, OrbitControls, Text } from "@react-three/drei";
 import type { ReactNode } from "react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { iterWarehouseSlots, WAREHOUSE, type WarehouseRow } from "@/lib/warehouse-config";
 import {
@@ -72,6 +72,7 @@ function Slot({
   highlightVarietyId?: string | null;
   onSelect: () => void;
 }) {
+  const materialRef = useRef<THREE.MeshStandardMaterial>(null);
   const occupied = !!entry;
   const variety = entry?.bigBagVariety ?? null;
   const colors = LEVEL_COLORS[level] ?? LEVEL_COLORS[0];
@@ -88,6 +89,12 @@ function Slot({
   }, [variety, isDimmedEmpty, isDimmedOccupied, selected]);
 
   const useStripeMap = !!stripeTexture && !selected;
+
+  useFrame(({ clock }) => {
+    if (!selected || !materialRef.current) return;
+    materialRef.current.emissiveIntensity =
+      Math.sin(clock.elapsedTime * 5) * 0.15 + 0.5;
+  });
 
   const match = positionCode.match(/^([A-G])([0-2])([1-9])$/);
   if (!match) return null;
@@ -140,6 +147,7 @@ function Slot({
     <mesh position={[x, y, z]} renderOrder={selected ? 2 : isDimmedOccupied ? -1 : 0}>
       <boxGeometry args={[SLOT_SIZE, SLOT_SIZE, SLOT_SIZE]} />
       <meshStandardMaterial
+        ref={materialRef}
         color={color}
         map={useStripeMap ? stripeTexture : undefined}
         emissive={emissive}

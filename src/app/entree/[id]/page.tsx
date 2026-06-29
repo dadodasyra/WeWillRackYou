@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { EntryForm } from "@/components/entries/EntryForm";
@@ -19,6 +19,7 @@ const WarehouseScene = dynamic(
 function EntryPageContent() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const entryId = Number(params.id);
 
   const [entry, setEntry] = useState<SerializedEntry | null | undefined>(undefined);
@@ -61,6 +62,12 @@ function EntryPageContent() {
     loadEntry();
     loadEntries();
   }, [loadEntry, loadEntries]);
+
+  useEffect(() => {
+    if (searchParams.get("edit") !== "1") return;
+    if (!entry || entry.status !== "ACTIVE") return;
+    setEditing(true);
+  }, [entry, searchParams]);
 
   const occupiedMap = useMemo(() => {
     const map = new Map<string, SerializedEntry>();

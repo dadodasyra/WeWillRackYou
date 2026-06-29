@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { VarietyLabel } from "@/components/entries/VarietyLabel";
+import { formatAttributionLine } from "@/lib/entry-display";
 import type { SerializedEntry } from "@/lib/validations";
 
 export default function ArchivesPage() {
@@ -50,10 +51,9 @@ export default function ArchivesPage() {
                 )}
               </p>
               <p className="text-xs text-stone-500">
-                Décommissionné le{" "}
                 {entry.decommissionedAt
-                  ? new Date(entry.decommissionedAt).toLocaleString("fr-FR")
-                  : "—"}
+                  ? `Décommissionné par ${formatAttributionLine(entry.lastModifiedBy.username, entry.decommissionedAt)}`
+                  : `Décommissionné par ${entry.lastModifiedBy.username}`}
               </p>
             </li>
           ))}

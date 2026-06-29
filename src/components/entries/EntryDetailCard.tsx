@@ -1,6 +1,11 @@
 "use client";
 
-import { formatEntryQuickSummary } from "@/lib/entry-display";
+import {
+  entryWasModifiedAfterCreation,
+  formatAttributionLine,
+  formatEntryQuickSummary,
+  getEntryPreviewDescription,
+} from "@/lib/entry-display";
 import { VarietyLabel } from "@/components/entries/VarietyLabel";
 import type { SerializedEntry } from "@/lib/validations";
 
@@ -31,17 +36,36 @@ export function EntryDetailCard({ entry }: Props) {
       {entry.kind === "BIG_BAG" && entry.description ? (
         <InfoRow label="Description" value={entry.description} />
       ) : null}
-      <p className="pt-2 text-xs text-stone-500">
-        Dernière modification par {entry.lastModifiedBy.username} le{" "}
-        {new Date(entry.updatedAt).toLocaleString("fr-FR")}
-      </p>
+      <div className="space-y-1 border-t border-stone-100 pt-3">
+        <p className="text-xs text-stone-500">
+          Ajouté par {formatAttributionLine(entry.createdBy.username, entry.createdAt)}
+        </p>
+        {entry.status === "ACTIVE" && entryWasModifiedAfterCreation(entry) ? (
+          <p className="text-xs text-stone-500">
+            Modifié par {formatAttributionLine(entry.lastModifiedBy.username, entry.updatedAt)}
+          </p>
+        ) : null}
+        {entry.status === "DECOMMISSIONED" && entry.decommissionedAt ? (
+          <p className="text-xs text-stone-500">
+            Décommissionné par{" "}
+            {formatAttributionLine(entry.lastModifiedBy.username, entry.decommissionedAt)}
+          </p>
+        ) : null}
+      </div>
     </section>
   );
 }
 
 export function EntryQuickSummary({ entry }: { entry: SerializedEntry }) {
+  const previewDescription = getEntryPreviewDescription(entry);
+
   return (
-    <p className="text-sm font-medium text-stone-800">{formatEntryQuickSummary(entry)}</p>
+    <div className="space-y-1">
+      <p className="text-sm font-medium text-stone-800">{formatEntryQuickSummary(entry)}</p>
+      {previewDescription ? (
+        <p className="text-sm text-stone-500">{previewDescription}</p>
+      ) : null}
+    </div>
   );
 }
 

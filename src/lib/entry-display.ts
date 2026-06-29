@@ -43,3 +43,26 @@ export function formatEntryDetails(entry: SerializedEntry): string {
 
   return parts.length > 0 ? parts.join(" · ") : "—";
 }
+
+export function formatAttributionLine(username: string, dateIso: string): string {
+  return `${username} le ${new Date(dateIso).toLocaleString("fr-FR")}`;
+}
+
+export function entryWasModifiedAfterCreation(entry: SerializedEntry): boolean {
+  if (entry.createdBy.username !== entry.lastModifiedBy.username) return true;
+  const created = new Date(entry.createdAt).getTime();
+  const updated = new Date(entry.updatedAt).getTime();
+  return updated - created > 1000;
+}
+
+const PREVIEW_DESCRIPTION_MAX_LENGTH = 80;
+
+/** Description courte affichable sous le résumé en preview (sélection carte). */
+export function getEntryPreviewDescription(entry: SerializedEntry): string | null {
+  if (entry.kind !== "BIG_BAG") return null;
+  const text = entry.description?.trim();
+  if (!text || text.length > PREVIEW_DESCRIPTION_MAX_LENGTH || text.includes("\n")) {
+    return null;
+  }
+  return text;
+}

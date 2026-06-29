@@ -2,7 +2,20 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { VarietySelect } from "@/components/entries/VarietySelect";
+import {
+  type EntryFormField,
+  type EntryFormFieldErrors,
+  hasEntryFormFieldErrors,
+  validateBigBagVarietyId,
+  validateDescription,
+  validateHumidity,
+  validateManualId,
+  validatePosition,
+  validateWeight,
+  validateYear,
+} from "@/lib/entry-form-validation";
 import type { SerializedEntry } from "@/lib/validations";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -40,6 +53,8 @@ export function EntryForm({
   const [description, setDescription] = useState(initial?.description ?? "");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [duplicateEntryId, setDuplicateEntryId] = useState<number | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<EntryFormFieldErrors>({});
   const [showMap, setShowMap] = useState(false);
   const [entries, setEntries] = useState<SerializedEntry[]>([]);
 
@@ -72,16 +87,131 @@ export function EntryForm({
     }
   }, [initial]);
 
+  const isCreate = !initial;
+  const bigBagFieldsRequired = isCreate && kind === "BIG_BAG";
+
+  const setFieldError = useCallback((field: EntryFormField, message: string | null) => {
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      if (message) next[field] = message;
+      else delete next[field];
+      return next;
+    });
+  }, []);
+
+  const validateField = useCallback(
+    (field: EntryFormField): string | null => {
+      switch (field) {
+        case "manualId":
+          return validateManualId(manualId, requireManualId === true && isCreate);
+        case "position":
+          return validatePosition(position);
+        case "bigBagVarietyId":
+          return validateBigBagVarietyId(bigBagVarietyId, bigBagFieldsRequired);
+        case "year":
+          return validateYear(year, bigBagFieldsRequired);
+        case "weight":
+          return validateWeight(weight);
+        case "humidity":
+          return validateHumidity(humidity);
+        case "description":
+          return validateDescription(description);
+        default:
+          return null;
+      }
+    },
+    [
+      manualId,
+      requireManualId,
+      isCreate,
+      position,
+      bigBagVarietyId,
+      bigBagFieldsRequired,
+      year,
+      weight,
+      humidity,
+      description,
+    ],
+  );
+
+  const handleFieldBlur = useCallback(
+    (field: EntryFormField) => {
+      if (!isCreate) return;
+      setFieldError(field, validateField(field));
+    },
+    [isCreate, setFieldError, validateField],
+  );
+
+  const clearFieldError = useCallback(
+    (field: EntryFormField) => {
+      setFieldError(field, null);
+    },
+    [setFieldError],
+  );
+
+  const checkDuplicateId = useCallback(async () => {
+    if (!requireManualId || initial) return;
+
+    const formatError = validateManualId(manualId, true);
+    if (formatError) {
+      setDuplicateEntryId(null);
+      setFieldError("manualId", formatError);
+      return;
+    }
+
+    const id = Number(manualId);
+    setFieldError("manualId", null);
+
+    const response = await fetch(`/api/entries/${id}`);
+
+    if (response.ok) {
+      setDuplicateEntryId(id);
+    } else {
+      setDuplicateEntryId(null);
+    }
+  }, [manualId, requireManualId, initial, setFieldError]);
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setLoading(true);
     setError("");
 
     const resolvedId = entryId ?? (requireManualId ? Number(manualId) : undefined);
-    if (!initial && (!resolvedId || !Number.isInteger(resolvedId) || resolvedId <= 0)) {
-      setError("Indiquez un identifiant valide (numéro du QR code)");
-      setLoading(false);
-      return;
+
+    if (isCreate) {
+      const errors: EntryFormFieldErrors = {};
+      if (requireManualId) {
+        const manualIdError = validateManualId(manualId, true);
+        if (manualIdError) errors.manualId = manualIdError;
+      } else if (!resolvedId || !Number.isInteger(resolvedId) || resolvedId <= 0) {
+        setError("Indiquez un identifiant valide (numéro du QR code)");
+        setLoading(false);
+        return;
+      }
+
+      const positionError = validatePosition(position);
+      if (positionError) errors.position = positionError;
+
+      if (kind === "BIG_BAG") {
+        const varietyError = validateBigBagVarietyId(bigBagVarietyId, true);
+        if (varietyError) errors.bigBagVarietyId = varietyError;
+        const yearError = validateYear(year, true);
+        if (yearError) errors.year = yearError;
+        const weightError = validateWeight(weight);
+        if (weightError) errors.weight = weightError;
+        const humidityError = validateHumidity(humidity);
+        if (humidityError) errors.humidity = humidityError;
+      }
+
+      const descriptionError = validateDescription(description);
+      if (descriptionError) errors.description = descriptionError;
+
+      if (hasEntryFormFieldErrors(errors) || duplicateEntryId != null) {
+        setFieldErrors(errors);
+        setError("Corrigez les champs en rouge avant de continuer.");
+        setLoading(false);
+        return;
+      }
     }
 
     const payload = {
@@ -94,10 +224,10 @@ export function EntryForm({
       description: description.trim() || null,
     };
 
-    const isCreate = !initial;
-    const url = isCreate ? "/api/entries" : `/api/entries/${initial.id}`;
-    const method = isCreate ? "POST" : "PATCH";
-    const body = isCreate ? { ...payload, id: resolvedId } : payload;
+    const isCreateRequest = !initial;
+    const url = isCreateRequest ? "/api/entries" : `/api/entries/${initial.id}`;
+    const method = isCreateRequest ? "POST" : "PATCH";
+    const body = isCreateRequest ? { ...payload, id: resolvedId } : payload;
 
     const response = await fetch(url, {
       method,
@@ -120,15 +250,34 @@ export function EntryForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {requireManualId && !initial ? (
-        <Input
-          label="Identifiant (numéro du QR code)"
-          type="number"
-          inputMode="numeric"
-          value={manualId}
-          onChange={(e) => setManualId(e.target.value)}
-          placeholder="Ex. 42"
-          required
-        />
+        <div className="space-y-2">
+          <Input
+            label="Identifiant (numéro du QR code)"
+            type="number"
+            inputMode="numeric"
+            value={manualId}
+            onChange={(e) => {
+              setManualId(e.target.value);
+              setDuplicateEntryId(null);
+              clearFieldError("manualId");
+            }}
+            onBlur={checkDuplicateId}
+            placeholder="Ex. 42"
+            required
+            error={
+              fieldErrors.manualId ??
+              (duplicateEntryId ? "Cet identifiant existe déjà" : undefined)
+            }
+          />
+          {duplicateEntryId ? (
+            <Link
+              href={`/entree/${duplicateEntryId}?edit=1`}
+              className="block w-full rounded-xl bg-emerald-700 px-4 py-3 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800"
+            >
+              Voir l&apos;entrée existante
+            </Link>
+          ) : null}
+        </div>
       ) : null}
 
       {entryId && !initial ? (
@@ -140,7 +289,20 @@ export function EntryForm({
       <Select
         label="Type d'entrée"
         value={kind}
-        onChange={(e) => setKind(e.target.value as "BIG_BAG" | "OTHER")}
+        onChange={(e) => {
+          const newKind = e.target.value as "BIG_BAG" | "OTHER";
+          setKind(newKind);
+          if (isCreate && newKind === "OTHER") {
+            setFieldErrors((prev) => {
+              const next = { ...prev };
+              delete next.bigBagVarietyId;
+              delete next.year;
+              delete next.weight;
+              delete next.humidity;
+              return next;
+            });
+          }
+        }}
         options={[
           { value: "BIG_BAG", label: "Big bag" },
           { value: "OTHER", label: "Autre (bac métallique, etc.)" },
@@ -151,8 +313,13 @@ export function EntryForm({
         <Input
           label="Emplacement"
           value={position}
-          onChange={(e) => setPosition(e.target.value.toUpperCase())}
+          onChange={(e) => {
+            setPosition(e.target.value.toUpperCase());
+            if (isCreate) clearFieldError("position");
+          }}
+          onBlur={() => handleFieldBlur("position")}
           placeholder="Ex. A01, B15"
+          error={isCreate ? fieldErrors.position : undefined}
         />
         <p className="text-xs text-stone-500">
           Format : rangée + niveau + colonne (ex. A01 = rangée A, niveau 0, colonne 1).
@@ -169,7 +336,10 @@ export function EntryForm({
           occupiedMap={occupiedMap}
           selectedPosition={position.trim() || null}
           onSlotSelect={({ position: pos, entry }) => {
-            if (!entry) setPosition(pos);
+            if (!entry) {
+              setPosition(pos);
+              if (isCreate) clearFieldError("position");
+            }
           }}
         />
       ) : null}
@@ -179,29 +349,51 @@ export function EntryForm({
           <VarietySelect
             label="Type de graine"
             value={bigBagVarietyId}
-            onChange={setBigBagVarietyId}
+            onChange={(value) => {
+              setBigBagVarietyId(value);
+              if (isCreate) clearFieldError("bigBagVarietyId");
+            }}
+            onBlur={() => handleFieldBlur("bigBagVarietyId")}
+            required={isCreate}
+            error={isCreate ? fieldErrors.bigBagVarietyId : undefined}
           />
           <Input
-            label="Année"
+            label="Année *"
             type="number"
             inputMode="numeric"
             value={year}
-            onChange={(e) => setYear(e.target.value)}
+            onChange={(e) => {
+              setYear(e.target.value);
+              if (isCreate) clearFieldError("year");
+            }}
+            onBlur={() => handleFieldBlur("year")}
             placeholder="Ex. 2024"
+            required={isCreate}
+            error={isCreate ? fieldErrors.year : undefined}
           />
           <Input
             label="Poids net (kg)"
             type="number"
             inputMode="decimal"
             value={weight}
-            onChange={(e) => setWeight(e.target.value)}
+            onChange={(e) => {
+              setWeight(e.target.value);
+              if (isCreate) clearFieldError("weight");
+            }}
+            onBlur={() => handleFieldBlur("weight")}
+            error={isCreate ? fieldErrors.weight : undefined}
           />
           <Input
             label="Humidité (%)"
             type="number"
             inputMode="decimal"
             value={humidity}
-            onChange={(e) => setHumidity(e.target.value)}
+            onChange={(e) => {
+              setHumidity(e.target.value);
+              if (isCreate) clearFieldError("humidity");
+            }}
+            onBlur={() => handleFieldBlur("humidity")}
+            error={isCreate ? fieldErrors.humidity : undefined}
           />
         </>
       ) : null}
@@ -209,17 +401,35 @@ export function EntryForm({
       <label className="block space-y-1">
         <span className="text-sm font-medium text-stone-700">Description</span>
         <textarea
-          className="w-full rounded-xl border border-stone-300 bg-white px-3 py-3 text-base outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+          className={`w-full rounded-xl border bg-white px-3 py-3 text-base outline-none focus:ring-2 ${
+            isCreate && fieldErrors.description
+              ? "border-red-500 focus:border-red-500 focus:ring-red-100"
+              : "border-stone-300 focus:border-emerald-600 focus:ring-emerald-100"
+          }`}
           rows={3}
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={(e) => {
+            setDescription(e.target.value);
+            if (isCreate) clearFieldError("description");
+          }}
+          onBlur={() => handleFieldBlur("description")}
         />
+        {isCreate && fieldErrors.description ? (
+          <span className="text-xs text-red-600">{fieldErrors.description}</span>
+        ) : null}
       </label>
 
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
       <div className="space-y-2">
-        <Button type="submit" disabled={loading}>
+        <Button
+          type="submit"
+          disabled={
+            loading ||
+            duplicateEntryId != null ||
+            (isCreate && hasEntryFormFieldErrors(fieldErrors))
+          }
+        >
           {loading ? "Enregistrement..." : initial ? "Enregistrer" : "Créer l'entrée"}
         </Button>
         {onCancel ? (
