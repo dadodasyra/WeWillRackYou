@@ -23,6 +23,7 @@ import {
   SLOT_SIZE,
 } from "@/lib/warehouse-layout";
 import { formatPosition } from "@/lib/position";
+import { getStripedVarietyTexture, getVarietyEmissive } from "@/lib/variety-color";
 import type { SerializedEntry } from "@/lib/validations";
 
 export type SlotSelection = {
@@ -58,17 +59,24 @@ function CameraSetup({ target }: { target: [number, number, number] }) {
 function Slot({
   positionCode,
   level,
-  occupied,
+  entry,
   selected,
   onSelect,
 }: {
   positionCode: string;
   level: number;
-  occupied: boolean;
+  entry?: SerializedEntry;
   selected: boolean;
   onSelect: () => void;
 }) {
+  const occupied = !!entry;
+  const variety = entry?.bigBagVariety ?? null;
   const colors = LEVEL_COLORS[level] ?? LEVEL_COLORS[0];
+
+  const stripedTexture = useMemo(() => {
+    if (!variety?.isBarred) return null;
+    return getStripedVarietyTexture(variety.color, true);
+  }, [variety?.color, variety?.isBarred]);
 
   const match = positionCode.match(/^([A-G])([0-2])([1-9])$/);
   if (!match) return null;
@@ -83,6 +91,12 @@ function Slot({
   let emissive = occupied ? "#14532d" : "#000000";
   let emissiveIntensity = occupied ? 0.15 : 0;
 
+  if (occupied && variety) {
+    color = variety.color;
+    emissive = getVarietyEmissive(variety.color);
+    emissiveIntensity = 0.25;
+  }
+
   if (selected) {
     color = SELECTED_COLOR;
     emissive = SELECTED_EMISSIVE;
@@ -93,7 +107,8 @@ function Slot({
     <mesh position={[x, y, z]} renderOrder={selected ? 2 : 0}>
       <boxGeometry args={[SLOT_SIZE, SLOT_SIZE, SLOT_SIZE]} />
       <meshStandardMaterial
-        color={color}
+        color={stripedTexture ? "#ffffff" : color}
+        map={stripedTexture}
         emissive={emissive}
         emissiveIntensity={emissiveIntensity}
         transparent={!occupied && !selected}
@@ -147,36 +162,55 @@ function RowLabels() {
   );
 }
 
-/** Porte personnel — ouverture vers l'intérieur et vers la droite (+X). */
+/** Porte personnel — charnière à droite, cadre à deux montants + seuil. */
 function FloorPersonnelDoor() {
   const door = getPersonnelDoorPlacement();
   const y = 0.05;
-  const { hingeX, hingeZ, width, leafLength } = door;
-  const jambEndX = hingeX + width;
+  const { jambLeftX, jambRightX, hingeX, hingeZ, leafLength, jambDepth } = door;
 
   const arcPoints: [number, number, number][] = [];
   const segments = 16;
   for (let i = 0; i <= segments; i++) {
     const angle = (i / segments) * (Math.PI / 2);
+    // Part du bout intérieur du vantail (−Z) et revient vers la gauche le long du mur
     arcPoints.push([
-      hingeX + Math.sin(angle) * leafLength,
+      hingeX - Math.sin(angle) * leafLength,
       y,
       hingeZ - Math.cos(angle) * leafLength,
     ]);
   }
 
   const leafEnd: [number, number, number] = [
-    hingeX + leafLength,
+    hingeX,
     y,
-    hingeZ,
+    hingeZ - leafLength,
   ];
 
   return (
     <group renderOrder={6}>
+      {/* Seuil (linteau au sol, le long de l'ouverture) */}
       <Line
         points={[
-          [hingeX, y, hingeZ],
-          [jambEndX, y, hingeZ],
+          [jambLeftX, y, hingeZ],
+          [jambRightX, y, hingeZ],
+        ]}
+        color="#57534e"
+        lineWidth={2}
+      />
+      {/* Montant gauche (gâche) */}
+      <Line
+        points={[
+          [jambLeftX, y, hingeZ],
+          [jambLeftX, y, hingeZ - jambDepth],
+        ]}
+        color="#57534e"
+        lineWidth={2}
+      />
+      {/* Montant droit (charnière) */}
+      <Line
+        points={[
+          [jambRightX, y, hingeZ],
+          [jambRightX, y, hingeZ - jambDepth],
         ]}
         color="#57534e"
         lineWidth={2}
@@ -342,7 +376,7 @@ function WarehouseGrid({
           key={position}
           positionCode={position}
           level={level}
-          occupied={!!entry}
+          entry={entry}
           selected={selectedPosition === position}
           onSelect={() =>
             onSlotSelect({
