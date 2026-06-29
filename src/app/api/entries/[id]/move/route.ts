@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { serializeEntry, positionToDb } from "@/lib/entries";
+import { serializeEntry, positionToDb, entryInclude } from "@/lib/entries";
 import { getSessionUser, jsonError, unauthorized } from "@/lib/api";
 import { moveEntrySchema } from "@/lib/validations";
 
@@ -45,10 +45,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       ...location,
       lastModifiedById: user.id,
     },
-    include: {
-      createdBy: { select: { username: true } },
-      lastModifiedBy: { select: { username: true } },
-    },
+    include: entryInclude,
   });
 
   return NextResponse.json(serializeEntry(entry));

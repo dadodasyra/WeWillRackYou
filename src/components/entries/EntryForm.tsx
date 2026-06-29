@@ -2,7 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { CEREAL_TYPE_LABELS, CEREAL_TYPES } from "@/lib/cereal-types";
+import { VarietySelect } from "@/components/entries/VarietySelect";
 import type { SerializedEntry } from "@/lib/validations";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -33,8 +33,7 @@ export function EntryForm({
   const [manualId, setManualId] = useState("");
   const [kind, setKind] = useState<"BIG_BAG" | "OTHER">(initial?.kind ?? "BIG_BAG");
   const [position, setPosition] = useState(initial?.position ?? "");
-  const [cerealType, setCerealType] = useState(initial?.cerealType ?? "");
-  const [cerealTypeOther, setCerealTypeOther] = useState(initial?.cerealTypeOther ?? "");
+  const [bigBagVarietyId, setBigBagVarietyId] = useState(initial?.bigBagVariety?.id ?? "");
   const [year, setYear] = useState(initial?.year?.toString() ?? "");
   const [weight, setWeight] = useState(initial?.weight?.toString() ?? "");
   const [humidity, setHumidity] = useState(initial?.humidity?.toString() ?? "");
@@ -65,8 +64,7 @@ export function EntryForm({
     if (initial) {
       setKind(initial.kind);
       setPosition(initial.position ?? "");
-      setCerealType(initial.cerealType ?? "");
-      setCerealTypeOther(initial.cerealTypeOther ?? "");
+      setBigBagVarietyId(initial.bigBagVariety?.id ?? "");
       setYear(initial.year?.toString() ?? "");
       setWeight(initial.weight?.toString() ?? "");
       setHumidity(initial.humidity?.toString() ?? "");
@@ -89,9 +87,7 @@ export function EntryForm({
     const payload = {
       kind,
       position: position.trim() || null,
-      cerealType: kind === "BIG_BAG" && cerealType ? cerealType : null,
-      cerealTypeOther:
-        kind === "BIG_BAG" && cerealType === "AUTRE" ? cerealTypeOther : null,
+      bigBagVarietyId: kind === "BIG_BAG" && bigBagVarietyId ? bigBagVarietyId : null,
       year: kind === "BIG_BAG" && year ? Number(year) : null,
       weight: kind === "BIG_BAG" && weight ? Number(weight) : null,
       humidity: kind === "BIG_BAG" && humidity ? Number(humidity) : null,
@@ -175,26 +171,11 @@ export function EntryForm({
 
       {kind === "BIG_BAG" ? (
         <>
-          <Select
+          <VarietySelect
             label="Type de graine"
-            value={cerealType}
-            onChange={(e) => setCerealType(e.target.value)}
-            options={[
-              { value: "", label: "— Non renseigné —" },
-              ...CEREAL_TYPES.map((type) => ({
-                value: type,
-                label: CEREAL_TYPE_LABELS[type],
-              })),
-            ]}
+            value={bigBagVarietyId}
+            onChange={setBigBagVarietyId}
           />
-          {cerealType === "AUTRE" ? (
-            <Input
-              label="Précision (autre)"
-              value={cerealTypeOther}
-              onChange={(e) => setCerealTypeOther(e.target.value)}
-              maxLength={50}
-            />
-          ) : null}
           <Input
             label="Année"
             type="number"

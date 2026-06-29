@@ -1,7 +1,8 @@
-import { CerealType, EntryKind } from "@prisma/client";
+import { EntryKind } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { serializeEntry, positionToDb, syncEntryIdSequence } from "@/lib/entries";
+import { resolveBigBagVarietyId } from "@/lib/big-bag-varieties";
+import { serializeEntry, positionToDb, syncEntryIdSequence, entryInclude } from "@/lib/entries";
 import { getSessionUser, jsonError, unauthorized } from "@/lib/api";
 import { createEntrySchema } from "@/lib/validations";
 
@@ -19,10 +20,7 @@ export async function GET(request: NextRequest) {
         ? { locationRow: null, locationLevel: null, locationColumn: null }
         : {}),
     },
-    include: {
-      createdBy: { select: { username: true } },
-      lastModifiedBy: { select: { username: true } },
-    },
+    include: entryInclude,
     orderBy: { id: "asc" },
   });
 
@@ -65,16 +63,19 @@ export async function POST(request: NextRequest) {
     return jsonError("L'identifiant est obligatoire");
   }
 
+  let bigBagVarietyId: string | null = null;
+  try {
+    bigBagVarietyId = await resolveBigBagVarietyId(data.bigBagVarietyId, data.kind);
+  } catch {
+    return jsonError("Variété de big bag invalide ou inactive");
+  }
+
   const entry = await prisma.entry.create({
     data: {
       id: data.id,
       kind: data.kind as EntryKind,
       ...location,
-      cerealType: data.kind === "BIG_BAG" ? (data.cerealType as CerealType | null) ?? null : null,
-      cerealTypeOther:
-        data.kind === "BIG_BAG" && data.cerealType === "AUTRE"
-          ? data.cerealTypeOther?.trim() ?? null
-          : null,
+      bigBagVarietyId,
       year: data.kind === "BIG_BAG" ? data.year ?? null : null,
       weight: data.kind === "BIG_BAG" ? data.weight ?? null : null,
       humidity: data.kind === "BIG_BAG" ? data.humidity ?? null : null,
@@ -82,10 +83,7 @@ export async function POST(request: NextRequest) {
       createdById: user.id,
       lastModifiedById: user.id,
     },
-    include: {
-      createdBy: { select: { username: true } },
-      lastModifiedBy: { select: { username: true } },
-    },
+    include: entryInclude,
   });
 
   if (data.id) {

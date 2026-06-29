@@ -122,16 +122,21 @@ export function getFrontLayoutZ() {
   };
 }
 
-/** Porte personnel — couloir F–G, devant les lettres de rangée. */
+/** Porte personnel — couloir F–G, charnière à droite. */
 export function getPersonnelDoorPlacement() {
   const aisleX = getAisleCenterX(["F", "G"]);
   const { doorZ } = getFrontLayoutZ();
   const width = 0.85;
+  const jambLeftX = aisleX - width / 2;
+  const jambRightX = aisleX + width / 2;
   return {
-    hingeX: aisleX - width / 2,
+    jambLeftX,
+    jambRightX,
+    hingeX: jambRightX,
     hingeZ: doorZ,
     width,
     leafLength: width * 0.92,
+    jambDepth: 0.18,
   };
 }
 

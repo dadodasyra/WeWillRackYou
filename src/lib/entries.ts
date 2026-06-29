@@ -1,15 +1,36 @@
-import { Entry, User } from "@prisma/client";
+import { BigBagVariety, Entry, User } from "@prisma/client";
 import { formatPosition, parsePosition } from "./position";
-import type { SerializedEntry } from "./validations";
+import type { SerializedBigBagVariety, SerializedEntry } from "./validations";
 
 type EntryWithUsers = Entry & {
   createdBy: Pick<User, "username">;
   lastModifiedBy: Pick<User, "username">;
+  bigBagVariety: Pick<BigBagVariety, "id" | "name" | "color" | "isBarred"> | null;
 };
+
+export const entryInclude = {
+  createdBy: { select: { username: true } },
+  lastModifiedBy: { select: { username: true } },
+  bigBagVariety: {
+    select: { id: true, name: true, color: true, isBarred: true },
+  },
+} as const;
+
+function serializeVariety(
+  variety: Pick<BigBagVariety, "id" | "name" | "color" | "isBarred"> | null,
+): SerializedBigBagVariety | null {
+  if (!variety) return null;
+  return {
+    id: variety.id,
+    name: variety.name,
+    color: variety.color,
+    isBarred: variety.isBarred,
+  };
+}
 
 export function serializeEntry(entry: EntryWithUsers): SerializedEntry {
   const position =
-    entry.locationRow && entry.locationLevel && entry.locationColumn
+    entry.locationRow && entry.locationLevel != null && entry.locationColumn
       ? formatPosition({
           row: entry.locationRow as "A",
           level: entry.locationLevel,
@@ -21,8 +42,7 @@ export function serializeEntry(entry: EntryWithUsers): SerializedEntry {
     id: entry.id,
     kind: entry.kind,
     position,
-    cerealType: entry.cerealType,
-    cerealTypeOther: entry.cerealTypeOther,
+    bigBagVariety: serializeVariety(entry.bigBagVariety),
     year: entry.year,
     weight: entry.weight,
     humidity: entry.humidity,

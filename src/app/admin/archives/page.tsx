@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { CEREAL_TYPE_LABELS } from "@/lib/cereal-types";
+import { VarietyLabel } from "@/components/entries/VarietyLabel";
 import type { SerializedEntry } from "@/lib/validations";
 
 export default function ArchivesPage() {
@@ -25,9 +25,6 @@ export default function ArchivesPage() {
   return (
     <main className="mx-auto max-w-lg space-y-4 px-4 py-4">
       <header className="space-y-1">
-        <Link href="/admin/utilisateurs" className="text-sm text-emerald-700">
-          ← Utilisateurs
-        </Link>
         <h1 className="text-xl font-bold text-emerald-900">Archives</h1>
         <p className="text-sm text-stone-600">
           Entrées décommissionnées (hors Ferme du kikiriki)
@@ -46,15 +43,11 @@ export default function ArchivesPage() {
                 Entrée #{entry.id}
               </Link>
               <p className="text-sm text-stone-600">
-                {entry.kind === "BIG_BAG"
-                  ? entry.cerealType
-                    ? entry.cerealType === "AUTRE"
-                      ? entry.cerealTypeOther
-                      : CEREAL_TYPE_LABELS[
-                          entry.cerealType as keyof typeof CEREAL_TYPE_LABELS
-                        ]
-                    : "Big bag"
-                  : "Autre"}
+                {entry.kind === "BIG_BAG" ? (
+                  <VarietyLabel variety={entry.bigBagVariety} />
+                ) : (
+                  "Autre"
+                )}
               </p>
               <p className="text-xs text-stone-500">
                 Décommissionné le{" "}

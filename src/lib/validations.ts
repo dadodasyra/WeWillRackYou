@@ -1,15 +1,42 @@
 import { z } from "zod";
-import { CEREAL_TYPES } from "./cereal-types";
 import { parsePosition } from "./position";
 
 export const entryKindSchema = z.enum(["BIG_BAG", "OTHER"]);
-export const cerealTypeSchema = z.enum(CEREAL_TYPES as [string, ...string[]]);
+
+export const hexColorSchema = z
+  .string()
+  .regex(/^#[0-9A-Fa-f]{6}$/, "Couleur hex invalide (ex. #FF0000)");
+
+export const createBigBagVarietySchema = z.object({
+  name: z.string().min(1).max(100),
+  color: hexColorSchema,
+  isBarred: z.boolean().optional(),
+  sortOrder: z.number().int().min(0).optional(),
+});
+
+export const updateBigBagVarietySchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  color: hexColorSchema.optional(),
+  isBarred: z.boolean().optional(),
+  sortOrder: z.number().int().min(0).optional(),
+  isActive: z.boolean().optional(),
+});
+
+export const reorderBigBagVarietiesSchema = z.object({
+  ids: z.array(z.string().cuid()).min(1),
+});
+
+export type SerializedBigBagVariety = {
+  id: string;
+  name: string;
+  color: string;
+  isBarred: boolean;
+};
 
 const entryBaseSchema = z.object({
   kind: entryKindSchema,
   position: z.string().optional().nullable(),
-  cerealType: cerealTypeSchema.optional().nullable(),
-  cerealTypeOther: z.string().max(50).optional().nullable(),
+  bigBagVarietyId: z.string().cuid().optional().nullable(),
   year: z.number().int().min(1980).max(2100).optional().nullable(),
   weight: z.number().positive().optional().nullable(),
   humidity: z.number().min(0).max(100).optional().nullable(),
@@ -18,10 +45,7 @@ const entryBaseSchema = z.object({
 
 function refineEntry(
   data: {
-    kind?: "BIG_BAG" | "OTHER";
     position?: string | null;
-    cerealType?: string | null;
-    cerealTypeOther?: string | null;
   },
   ctx: z.RefinementCtx,
 ) {
@@ -34,13 +58,6 @@ function refineEntry(
         path: ["position"],
       });
     }
-  }
-  if (data.cerealType === "AUTRE" && !data.cerealTypeOther?.trim()) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Précisez le type de céréale",
-      path: ["cerealTypeOther"],
-    });
   }
 }
 
@@ -81,8 +98,7 @@ export type SerializedEntry = {
   id: number;
   kind: "BIG_BAG" | "OTHER";
   position: string | null;
-  cerealType: string | null;
-  cerealTypeOther: string | null;
+  bigBagVariety: SerializedBigBagVariety | null;
   year: number | null;
   weight: number | null;
   humidity: number | null;

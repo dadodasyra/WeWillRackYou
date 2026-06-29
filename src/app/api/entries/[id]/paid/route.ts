@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { serializeEntry } from "@/lib/entries";
+import { serializeEntry, entryInclude } from "@/lib/entries";
 import { getSessionUser, jsonError, unauthorized } from "@/lib/api";
 import { z } from "zod";
 
@@ -29,10 +29,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       isPaid: parsed.data.isPaid,
       lastModifiedById: user.id,
     },
-    include: {
-      createdBy: { select: { username: true } },
-      lastModifiedBy: { select: { username: true } },
-    },
+    include: entryInclude,
   });
 
   return NextResponse.json(serializeEntry(entry));

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { serializeEntry } from "@/lib/entries";
+import { serializeEntry, entryInclude } from "@/lib/entries";
 import { forbidden, getSessionUser, jsonError, unauthorized } from "@/lib/api";
 
 export async function GET() {
@@ -13,10 +13,7 @@ export async function GET() {
       status: "DECOMMISSIONED",
       decommissionForKikiriki: false,
     },
-    include: {
-      createdBy: { select: { username: true } },
-      lastModifiedBy: { select: { username: true } },
-    },
+    include: entryInclude,
     orderBy: { decommissionedAt: "desc" },
   });
 

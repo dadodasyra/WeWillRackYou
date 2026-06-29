@@ -1,6 +1,7 @@
 "use client";
 
-import { formatEntryQuickSummary, getCerealLabel } from "@/lib/entry-display";
+import { formatEntryQuickSummary } from "@/lib/entry-display";
+import { VarietyLabel } from "@/components/entries/VarietyLabel";
 import type { SerializedEntry } from "@/lib/validations";
 
 type Props = {
@@ -8,15 +9,18 @@ type Props = {
 };
 
 export function EntryDetailCard({ entry }: Props) {
-  const cerealLabel = getCerealLabel(entry);
-
   return (
     <section className="space-y-2 rounded-2xl border border-stone-200 bg-white p-4">
       <InfoRow label="ID" value={`#${entry.id}`} />
       <InfoRow label="Emplacement" value={entry.position} />
       {entry.kind === "BIG_BAG" ? (
         <>
-          <InfoRow label="Type de graine" value={cerealLabel} />
+          <div className="flex justify-between gap-4 text-sm">
+            <span className="text-stone-500">Type de graine</span>
+            <span className="text-right text-stone-800">
+              {entry.bigBagVariety ? <VarietyLabel variety={entry.bigBagVariety} /> : "—"}
+            </span>
+          </div>
           <InfoRow label="Année" value={entry.year?.toString()} />
           <InfoRow label="Poids net" value={entry.weight ? `${entry.weight} kg` : null} />
           <InfoRow label="Humidité" value={entry.humidity != null ? `${entry.humidity} %` : null} />

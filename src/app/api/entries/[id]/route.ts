@@ -1,7 +1,7 @@
-import { CerealType } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { serializeEntry, positionToDb } from "@/lib/entries";
+import { resolveBigBagVarietyId } from "@/lib/big-bag-varieties";
+import { serializeEntry, positionToDb, entryInclude } from "@/lib/entries";
 import { getSessionUser, jsonError, unauthorized } from "@/lib/api";
 import { updateEntrySchema } from "@/lib/validations";
 
@@ -18,10 +18,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
 
   const entry = await prisma.entry.findUnique({
     where: { id },
-    include: {
-      createdBy: { select: { username: true } },
-      lastModifiedBy: { select: { username: true } },
-    },
+    include: entryInclude,
   });
 
   if (!entry) {
@@ -77,22 +74,24 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     locationUpdate = location;
   }
 
+  let bigBagVarietyUpdate = {};
+  if (data.bigBagVarietyId !== undefined) {
+    try {
+      const resolvedId = await resolveBigBagVarietyId(data.bigBagVarietyId, kind);
+      bigBagVarietyUpdate = { bigBagVarietyId: resolvedId };
+    } catch {
+      return jsonError("Variété de big bag invalide ou inactive");
+    }
+  } else if (data.kind === "OTHER") {
+    bigBagVarietyUpdate = { bigBagVarietyId: null };
+  }
+
   const entry = await prisma.entry.update({
     where: { id },
     data: {
       ...(data.kind ? { kind: data.kind } : {}),
       ...locationUpdate,
-      ...(data.cerealType !== undefined
-        ? { cerealType: kind === "BIG_BAG" ? (data.cerealType as CerealType | null) : null }
-        : {}),
-      ...(data.cerealTypeOther !== undefined
-        ? {
-            cerealTypeOther:
-              kind === "BIG_BAG" && (data.cerealType ?? existing.cerealType) === "AUTRE"
-                ? data.cerealTypeOther?.trim() ?? null
-                : null,
-          }
-        : {}),
+      ...bigBagVarietyUpdate,
       ...(data.year !== undefined
         ? { year: kind === "BIG_BAG" ? data.year : null }
         : {}),
@@ -107,10 +106,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         : {}),
       lastModifiedById: user.id,
     },
-    include: {
-      createdBy: { select: { username: true } },
-      lastModifiedBy: { select: { username: true } },
-    },
+    include: entryInclude,
   });
 
   return NextResponse.json(serializeEntry(entry));

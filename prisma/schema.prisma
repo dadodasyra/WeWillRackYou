@@ -17,18 +17,6 @@ enum EntryKind {
   OTHER
 }
 
-enum CerealType {
-  BLE
-  ORGE
-  MAIS
-  AVOINE
-  COLZA
-  TOURNESOL
-  POIS
-  FEVEROLE
-  AUTRE
-}
-
 enum EntryStatus {
   ACTIVE
   DECOMMISSIONED
@@ -46,14 +34,26 @@ model User {
   modifiedEntries Entry[] @relation("ModifiedEntries")
 }
 
+model BigBagVariety {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  color     String
+  isBarred  Boolean  @default(false)
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  entries Entry[]
+}
+
 model Entry {
   id                       Int         @id @default(autoincrement())
   kind                     EntryKind
   locationRow              String?
   locationLevel            Int?
   locationColumn           Int?
-  cerealType               CerealType?
-  cerealTypeOther          String?     @db.VarChar(50)
+  bigBagVarietyId          String?
   year                     Int?
   weight                   Float?
   humidity                 Float?
@@ -67,10 +67,12 @@ model Entry {
 
   createdById      String
   lastModifiedById String
-  createdBy        User   @relation("CreatedEntries", fields: [createdById], references: [id])
-  lastModifiedBy   User   @relation("ModifiedEntries", fields: [lastModifiedById], references: [id])
+  createdBy        User           @relation("CreatedEntries", fields: [createdById], references: [id])
+  lastModifiedBy   User           @relation("ModifiedEntries", fields: [lastModifiedById], references: [id])
+  bigBagVariety    BigBagVariety? @relation(fields: [bigBagVarietyId], references: [id])
 
   @@index([status])
   @@index([decommissionForKikiriki, decommissionedAt])
   @@index([locationRow, locationLevel, locationColumn])
+  @@index([bigBagVarietyId])
 }

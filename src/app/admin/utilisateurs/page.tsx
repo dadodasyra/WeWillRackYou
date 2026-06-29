@@ -1,7 +1,6 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -85,9 +84,6 @@ export default function AdminUsersPage() {
       <header className="space-y-1">
         <h1 className="text-xl font-bold text-emerald-900">Utilisateurs</h1>
         <p className="text-sm text-stone-600">Gestion des comptes</p>
-        <Link href="/admin/archives" className="text-sm text-emerald-700">
-          Voir les archives →
-        </Link>
       </header>
 
       <form onSubmit={handleCreate} className="space-y-3 rounded-2xl border border-stone-200 bg-white p-4">
