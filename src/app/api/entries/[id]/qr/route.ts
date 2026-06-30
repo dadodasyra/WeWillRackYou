@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import QRCode from "qrcode";
 import { getSessionUser, jsonError, unauthorized } from "@/lib/api";
 import { prisma } from "@/lib/db";
+import { buildEntryQrUrl } from "@/lib/qr";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest, { params }: Params) {
   if (!entry) return jsonError("Entrée introuvable", 404);
 
   const baseUrl = process.env.AUTH_URL ?? request.nextUrl.origin;
-  const url = `${baseUrl}/entry/${id}`;
+  const url = buildEntryQrUrl(id, baseUrl);
 
   const png = await QRCode.toBuffer(url, {
     type: "png",

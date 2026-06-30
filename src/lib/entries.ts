@@ -8,6 +8,19 @@ type EntryWithUsers = Entry & {
   bigBagVariety: Pick<BigBagVariety, "id" | "name" | "color" | "isBarred"> | null;
 };
 
+/** Entrées visibles dans l’admin Archives (décommissionnées, hors kikiriki). */
+export const archiveEntryWhere = {
+  status: "DECOMMISSIONED" as const,
+  decommissionForKikiriki: false,
+};
+
+export function isArchiveEntry(entry: {
+  status: string;
+  decommissionForKikiriki: boolean;
+}): boolean {
+  return entry.status === "DECOMMISSIONED" && !entry.decommissionForKikiriki;
+}
+
 export const entryInclude = {
   createdBy: { select: { username: true } },
   lastModifiedBy: { select: { username: true } },

@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { serializeEntry, entryInclude } from "@/lib/entries";
-import { forbidden, getSessionUser, jsonError, unauthorized } from "@/lib/api";
+import { archiveEntryWhere, serializeEntry, entryInclude } from "@/lib/entries";
+import { forbidden, getSessionUser, unauthorized } from "@/lib/api";
 
 export async function GET() {
   const user = await getSessionUser();
@@ -9,13 +9,20 @@ export async function GET() {
   if (user.role !== "ADMIN") return forbidden();
 
   const entries = await prisma.entry.findMany({
-    where: {
-      status: "DECOMMISSIONED",
-      decommissionForKikiriki: false,
-    },
+    where: archiveEntryWhere,
     include: entryInclude,
     orderBy: { decommissionedAt: "desc" },
   });
 
   return NextResponse.json(entries.map(serializeEntry));
+}
+
+export async function DELETE() {
+  const user = await getSessionUser();
+  if (!user) return unauthorized();
+  if (user.role !== "ADMIN") return forbidden();
+
+  const result = await prisma.entry.deleteMany({ where: archiveEntryWhere });
+
+  return NextResponse.json({ deleted: result.count });
 }

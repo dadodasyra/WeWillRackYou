@@ -42,7 +42,7 @@ export function BottomNav() {
           className={linkClass(false)}
         >
           <span aria-hidden>🚪</span>
-          Sortir
+          Se déconnecter
         </button>
       </div>
     </nav>
