@@ -63,7 +63,7 @@ export function VarietySelect({ label, value, onChange, required, error, onBlur 
         {selected ? (
           <VarietyOptionContent variety={selected} />
         ) : (
-          <span className="text-stone-500">— Non renseigné —</span>
+          <span className="text-stone-500">- Non renseigné -</span>
         )}
       </button>
 
@@ -76,7 +76,7 @@ export function VarietySelect({ label, value, onChange, required, error, onBlur 
                 onClick={() => selectVariety("")}
                 className="flex w-full px-3 py-2 text-left text-stone-500 hover:bg-stone-50"
               >
-                — Non renseigné —
+                - Non renseigné -
               </button>
             </li>
           ) : null}

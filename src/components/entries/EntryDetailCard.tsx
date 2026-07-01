@@ -29,7 +29,7 @@ export function EntryDetailCard({ entry, actions }: Props) {
               <div className="flex justify-between gap-4 text-sm">
                 <span className="text-stone-500">Type de graine</span>
                 <span className="text-right text-stone-800">
-                  {entry.bigBagVariety ? <VarietyLabel variety={entry.bigBagVariety} /> : "—"}
+                  {entry.bigBagVariety ? <VarietyLabel variety={entry.bigBagVariety} /> : "-"}
                 </span>
               </div>
               <InfoRow label="Année" value={entry.year?.toString()} />
@@ -82,7 +82,7 @@ function InfoRow({ label, value }: { label: string; value: string | null | undef
   return (
     <div className="flex justify-between gap-4 text-sm">
       <span className="text-stone-500">{label}</span>
-      <span className="text-right text-stone-800">{value ?? "—"}</span>
+      <span className="text-right text-stone-800">{value ?? "-"}</span>
     </div>
   );
 }

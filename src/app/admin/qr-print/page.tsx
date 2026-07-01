@@ -199,7 +199,7 @@ export default function QrPrintPage() {
           <li>Ouvrez cette page sur le PC branché en USB à la SATO.</li>
           <li>Cliquez sur <strong>Imprimer les étiquettes</strong>.</li>
           <li>
-            Imprimante : <strong>SATO CL4NX Plus</strong> — format <strong>80 × 70 mm</strong>,
+            Imprimante : <strong>SATO CL4NX Plus</strong> - format <strong>80 × 70 mm</strong>,
             échelle <strong>100 %</strong>, marges <strong>aucune</strong>.
           </li>
           <li>Commencez par 1 étiquette pour vérifier l&apos;alignement.</li>

@@ -33,7 +33,7 @@ export function formatEntryQuickSummary(entry: SerializedEntry): string {
 export function formatEntryDetails(entry: SerializedEntry): string {
   if (entry.kind === "OTHER") {
     const text = entry.description?.trim();
-    return text ? (text.length > 40 ? `${text.slice(0, 39)}…` : text) : "—";
+    return text ? (text.length > 40 ? `${text.slice(0, 39)}…` : text) : "-";
   }
 
   const parts: string[] = [];
@@ -41,7 +41,7 @@ export function formatEntryDetails(entry: SerializedEntry): string {
   if (entry.weight) parts.push(`${entry.weight} kg`);
   if (entry.humidity != null) parts.push(`${entry.humidity} % H₂O`);
 
-  return parts.length > 0 ? parts.join(" · ") : "—";
+  return parts.length > 0 ? parts.join(" · ") : "-";
 }
 
 export function formatAttributionLine(username: string, dateIso: string): string {

@@ -19,7 +19,7 @@ function TypeCell({ entry }: { entry: SerializedEntry }) {
 
   const variety = entry.bigBagVariety;
   if (!variety) {
-    return <span className="truncate text-stone-500">—</span>;
+    return <span className="truncate text-stone-500">-</span>;
   }
 
   const label = abbreviateVarietyName(variety.name);
@@ -88,7 +88,7 @@ export function ArchiveEntryList({ entries, selectedEntryId, onEntrySelect }: Pr
                   <td className="truncate px-1.5 py-1.5 text-xs text-stone-500">
                     {entry.decommissionedAt
                       ? new Date(entry.decommissionedAt).toLocaleDateString("fr-FR")
-                      : "—"}
+                      : "-"}
                   </td>
                 </tr>
               );

@@ -89,7 +89,7 @@ function TypeCell({ entry }: { entry: SerializedEntry }) {
 
   const variety = entry.bigBagVariety;
   if (!variety) {
-    return <span className="truncate text-stone-500">—</span>;
+    return <span className="truncate text-stone-500">-</span>;
   }
 
   const label = abbreviateVarietyName(variety.name);
@@ -178,7 +178,7 @@ export function EntryListTable({
                     <TypeCell entry={entry} />
                   </td>
                   <td className="truncate px-1.5 py-1.5 text-stone-600">
-                    {entry.position ?? <span className="text-amber-700">—</span>}
+                    {entry.position ?? <span className="text-amber-700">-</span>}
                   </td>
                   <td className="hidden truncate px-1.5 py-1.5 text-stone-500 sm:table-cell">
                     {formatEntryDetails(entry)}

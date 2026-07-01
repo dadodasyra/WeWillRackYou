@@ -40,7 +40,7 @@ export default function PaiementsPage() {
     <main className="mx-auto max-w-lg space-y-4 px-4 py-4">
       <header className="space-y-1">
         <h1 className="text-xl font-bold text-emerald-900">Paiements</h1>
-        <p className="text-sm text-stone-600">Ferme du kikiriki — entrées à régler</p>
+        <p className="text-sm text-stone-600">Ferme du kikiriki - entrées à régler</p>
       </header>
 
       <div className="flex gap-2">
@@ -93,7 +93,7 @@ export default function PaiementsPage() {
                     Décommissionné le{" "}
                     {entry.decommissionedAt
                       ? new Date(entry.decommissionedAt).toLocaleString("fr-FR")
-                      : "—"}
+                      : "-"}
                   </p>
                 </div>
                 <label className="flex items-center gap-2 text-sm">

@@ -188,7 +188,7 @@ sudo certbot --nginx -d votre-domaine.fr
 
 ## Structure des positions
 
-Format : `{rangée}{niveau}{colonne}` — ex. `A11` = rangée A, niveau 1, colonne 1.
+Format : `{rangée}{niveau}{colonne}` - ex. `A11` = rangée A, niveau 1, colonne 1.
 
 ## Scripts utiles
 

@@ -203,7 +203,7 @@ function RowLabels() {
   );
 }
 
-/** Porte personnel — charnière à droite, cadre à deux montants + seuil. */
+/** Porte personnel - charnière à droite, cadre à deux montants + seuil. */
 function FloorPersonnelDoor() {
   const door = getPersonnelDoorPlacement();
   const y = 0.05;
@@ -269,7 +269,7 @@ function FloorPersonnelDoor() {
   );
 }
 
-/** Grande porte roulante — sur le bord avant du sol. */
+/** Grande porte roulante - sur le bord avant du sol. */
 function FloorRollingDoor() {
   const door = getRollingDoorPlacement();
   const y = 0.05;

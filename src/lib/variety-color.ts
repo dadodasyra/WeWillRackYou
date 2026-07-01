@@ -6,7 +6,7 @@ export type VarietyColorProps = {
   isBarred?: boolean;
 };
 
-/** Luminance relative (sRGB) — seuil empirique pour choisir la couleur des rayures. */
+/** Luminance relative (sRGB) - seuil empirique pour choisir la couleur des rayures. */
 export function isDarkColor(hex: string): boolean {
   const normalized = hex.replace("#", "");
   if (normalized.length !== 6) return true;
@@ -86,7 +86,7 @@ function drawDiagonalStripes(
   }
 }
 
-/** Texture Three.js — rayures visibles à distance (peu de répétitions sur la face). */
+/** Texture Three.js - rayures visibles à distance (peu de répétitions sur la face). */
 export function getStripedVarietyTexture(color: string, isBarred: boolean): THREE.CanvasTexture | null {
   if (!isBarred) return null;
 

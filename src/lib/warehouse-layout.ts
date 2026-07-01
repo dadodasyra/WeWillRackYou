@@ -122,7 +122,7 @@ export function getFrontLayoutZ() {
   };
 }
 
-/** Porte personnel — couloir F–G, charnière à droite. */
+/** Porte personnel - couloir F–G, charnière à droite. */
 export function getPersonnelDoorPlacement() {
   const aisleX = getAisleCenterX(["F", "G"]);
   const { doorZ } = getFrontLayoutZ();
@@ -140,7 +140,7 @@ export function getPersonnelDoorPlacement() {
   };
 }
 
-/** Grande porte roulante — devant le bord avant du sol, entre C et D. */
+/** Grande porte roulante - devant le bord avant du sol, entre C et D. */
 export function getRollingDoorPlacement() {
   const aisleX = getAisleCenterX(["C", "D"]);
   const floor = getFloorBounds();
