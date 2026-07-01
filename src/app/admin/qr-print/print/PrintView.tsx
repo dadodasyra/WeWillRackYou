@@ -106,8 +106,7 @@ export function PrintView({ from, to, baseUrl }: Props) {
           Imprimer
         </Button>
         <p className="max-w-sm text-sm text-stone-500">
-          Format 80 × 70 mm, échelle 100 %, marges aucune. Imprimez directement si possible
-          (éviter PDF si l&apos;alignement est incorrect).
+          Imprimante SATO, format 80 × 70 mm, échelle 100 %, marges aucune.
         </p>
       </div>
 

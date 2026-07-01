@@ -34,6 +34,7 @@ export default function QrPrintPage() {
   const [fromId, setFromId] = useState("");
   const [toId, setToId] = useState("");
   const [error, setError] = useState("");
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [previews, setPreviews] = useState<PreviewLabel[]>([]);
   const [baseUrl, setBaseUrl] = useState("");
 
@@ -62,23 +63,15 @@ export default function QrPrintPage() {
 
   const rangeValid = count > 0 && count <= MAX_LABELS;
 
-  const sbplUrl = useMemo(() => {
+  const rangeParams = useMemo(() => {
     if (!rangeValid) return null;
-    const params = new URLSearchParams({ from: fromId, to: toId });
-    return `/api/admin/qr-labels?${params.toString()}`;
+    return new URLSearchParams({ from: fromId, to: toId });
   }, [fromId, toId, rangeValid]);
 
-  const pdfUrl = useMemo(() => {
-    if (!rangeValid) return null;
-    const params = new URLSearchParams({ from: fromId, to: toId });
-    return `/api/admin/qr-labels/pdf?${params.toString()}`;
-  }, [fromId, toId, rangeValid]);
-
-  const printUrl = useMemo(() => {
-    if (!rangeValid) return null;
-    const params = new URLSearchParams({ from: fromId, to: toId });
-    return `/admin/qr-print/print?${params.toString()}`;
-  }, [fromId, toId, rangeValid]);
+  const printUrl = rangeParams ? `/admin/qr-print/print?${rangeParams.toString()}` : null;
+  const csvUrl = rangeParams ? `/api/admin/qr-labels/csv?${rangeParams.toString()}` : null;
+  const pdfUrl = rangeParams ? `/api/admin/qr-labels/pdf?${rangeParams.toString()}` : null;
+  const sbplUrl = rangeParams ? `/api/admin/qr-labels?${rangeParams.toString()}` : null;
 
   const loadPreviews = useCallback(async () => {
     if (!baseUrl || !rangeValid) {
@@ -109,46 +102,24 @@ export default function QrPrintPage() {
     loadPreviews();
   }, [loadPreviews]);
 
-  function handleDownloadPdf() {
+  function runValidated(action: (url: string) => void, url: string | null) {
     setError("");
-
     const validationError = validateRange(from, to);
     if (validationError) {
       setError(validationError);
       return;
     }
-
-    if (pdfUrl) {
-      window.location.href = pdfUrl;
-    }
+    if (url) action(url);
   }
 
-  function handleDownloadSbpl() {
-    setError("");
-
-    const validationError = validateRange(from, to);
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-
-    if (sbplUrl) {
-      window.location.href = sbplUrl;
-    }
+  function handlePrint() {
+    runValidated((url) => window.open(url, "_blank", "noopener,noreferrer"), printUrl);
   }
 
-  function handleBrowserPrint() {
-    setError("");
-
-    const validationError = validateRange(from, to);
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-
-    if (printUrl) {
-      window.open(printUrl, "_blank", "noopener,noreferrer");
-    }
+  function handleDownload(url: string | null) {
+    runValidated((target) => {
+      window.location.href = target;
+    }, url);
   }
 
   return (
@@ -156,7 +127,7 @@ export default function QrPrintPage() {
       <header className="space-y-1">
         <h1 className="text-xl font-bold text-emerald-900">Impression QR</h1>
         <p className="text-sm text-stone-600">
-          Génération d&apos;étiquettes pour imprimante SATO CL4NX Plus (80 × 70 mm, 609 dpi)
+          Étiquettes 80 × 70 mm pour imprimante SATO (via driver Windows)
         </p>
       </header>
 
@@ -186,14 +157,16 @@ export default function QrPrintPage() {
           </p>
         ) : null}
         <div className="space-y-2">
-          <Button type="button" disabled={!pdfUrl} onClick={handleDownloadPdf}>
-            Télécharger PDF (80 × 70 mm)
+          <Button type="button" disabled={!printUrl} onClick={handlePrint}>
+            Imprimer les étiquettes
           </Button>
-          <Button type="button" variant="secondary" disabled={!printUrl} onClick={handleBrowserPrint}>
-            Imprimer dans le navigateur
-          </Button>
-          <Button type="button" variant="secondary" disabled={!sbplUrl} onClick={handleDownloadSbpl}>
-            Télécharger (.prn SBPL)
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={!csvUrl}
+            onClick={() => handleDownload(csvUrl)}
+          >
+            Exporter pour NiceLabel (CSV)
           </Button>
         </div>
       </div>
@@ -230,37 +203,61 @@ export default function QrPrintPage() {
       ) : null}
 
       <section className="space-y-2 rounded-2xl border border-stone-200 bg-white p-4 text-sm text-stone-600">
-        <h2 className="font-semibold text-stone-800">PDF pour impression à distance (Parsec)</h2>
+        <h2 className="font-semibold text-stone-800">Impression (PC relié à l&apos;imprimante)</h2>
         <ol className="list-decimal space-y-1 pl-5">
-          <li>Téléchargez le <strong>PDF (80 × 70 mm)</strong> — une page = une étiquette raster 609 dpi.</li>
-          <li>Transférez le fichier sur le PC relié à l&apos;imprimante (Parsec, e-mail, clé USB…).</li>
+          <li>Ouvrez cette page sur le PC branché en USB à la SATO.</li>
+          <li>Cliquez sur <strong>Imprimer les étiquettes</strong>.</li>
           <li>
-            Ouvrez le PDF avec <strong>Adobe Acrobat Reader</strong> ou <strong>SumatraPDF</strong> (évitez
-            l&apos;aperçu Windows si possible).
+            Imprimante : <strong>SATO CL4NX Plus</strong> — format <strong>80 × 70 mm</strong>,
+            échelle <strong>100 %</strong>, marges <strong>aucune</strong>.
           </li>
-          <li>Imprimez sur la SATO CL4NX Plus : format <strong>80 × 70 mm</strong>, échelle{" "}
-            <strong>Taille réelle / 100 %</strong> (pas « Ajuster »), marges <strong>aucune</strong>.
-          </li>
-          <li>Testez avec 1 étiquette d&apos;abord.</li>
+          <li>Commencez par 1 étiquette pour vérifier l&apos;alignement.</li>
         </ol>
-        <p className="pt-1 text-amber-800">
-          N&apos;utilisez pas « Enregistrer en PDF » depuis le navigateur : ce PDF serveur a la bonne
-          taille d&apos;étiquette, pas du A4.
+        <p className="pt-1 text-stone-500">
+          Configuration initiale (une fois) : dans les propriétés de l&apos;imprimante Windows,
+          enregistrez ces réglages comme format par défaut.
         </p>
-        <h2 className="pt-2 font-semibold text-stone-800">Impression navigateur (sur le PC imprimante)</h2>
-        <ol className="list-decimal space-y-1 pl-5">
-          <li>Ouvrez l&apos;app sur le PC relié à l&apos;imprimante (directement ou via Parsec).</li>
-          <li>Cliquez sur <strong>Imprimer dans le navigateur</strong>.</li>
-          <li>
-            Format papier : <strong>80 × 70 mm</strong>. Échelle : <strong>100 %</strong>. Marges :{" "}
-            <strong>aucune</strong>.
-          </li>
-        </ol>
-        <h2 className="pt-2 font-semibold text-stone-800">Fichier SBPL (avancé)</h2>
+        <h2 className="pt-2 font-semibold text-stone-800">NiceLabel</h2>
         <p>
-          Le téléchargement <code className="text-xs">.prn</code> produit des commandes natives SATO.
-          Utile si vous envoyez directement les données à l&apos;imprimante (port réseau 9100).
+          Téléchargez le CSV, puis utilisez-le comme source de données dans votre modèle NiceLabel
+          existant (colonnes <code className="text-xs">id</code> et <code className="text-xs">url</code>).
         </p>
+      </section>
+
+      <section className="rounded-2xl border border-stone-200 bg-white">
+        <button
+          type="button"
+          className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold text-stone-800"
+          onClick={() => setShowAdvanced((open) => !open)}
+          aria-expanded={showAdvanced}
+        >
+          Options avancées
+          <span className="text-stone-400">{showAdvanced ? "▲" : "▼"}</span>
+        </button>
+        {showAdvanced ? (
+          <div className="space-y-2 border-t border-stone-200 px-4 pb-4 pt-3">
+            <p className="text-sm text-stone-600">
+              Réservé aux cas particuliers. L&apos;impression navigateur reste la méthode
+              recommandée avec un driver Windows USB.
+            </p>
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={!pdfUrl}
+              onClick={() => handleDownload(pdfUrl)}
+            >
+              Télécharger PDF
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={!sbplUrl}
+              onClick={() => handleDownload(sbplUrl)}
+            >
+              Télécharger SBPL (.prn)
+            </Button>
+          </div>
+        ) : null}
       </section>
     </main>
   );
