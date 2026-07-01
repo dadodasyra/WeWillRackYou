@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { resolveBigBagVarietyId } from "@/lib/big-bag-varieties";
+import { resolveOwnerId } from "@/lib/owners";
 import {
   serializeEntry,
   positionToDb,
@@ -91,12 +92,23 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     bigBagVarietyUpdate = { bigBagVarietyId: null };
   }
 
+  let ownerUpdate = {};
+  if (data.ownerId !== undefined) {
+    try {
+      const resolvedOwnerId = await resolveOwnerId(data.ownerId);
+      ownerUpdate = { ownerId: resolvedOwnerId };
+    } catch {
+      return jsonError("Propriétaire invalide ou inactif");
+    }
+  }
+
   const entry = await prisma.entry.update({
     where: { id },
     data: {
       ...(data.kind ? { kind: data.kind } : {}),
       ...locationUpdate,
       ...bigBagVarietyUpdate,
+      ...ownerUpdate,
       ...(data.year !== undefined
         ? { year: kind === "BIG_BAG" ? data.year : null }
         : {}),

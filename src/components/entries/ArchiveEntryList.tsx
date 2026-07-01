@@ -57,6 +57,7 @@ export function ArchiveEntryList({ entries, selectedEntryId, onEntrySelect }: Pr
             <tr>
               <th className="w-10 px-1.5 py-1.5 font-medium">#</th>
               <th className="w-[5.75rem] px-1.5 py-1.5 font-medium">Type</th>
+              <th className="hidden w-24 px-1.5 py-1.5 font-medium sm:table-cell">Propr.</th>
               <th className="hidden px-1.5 py-1.5 font-medium sm:table-cell">Infos</th>
               <th className="w-[7.5rem] px-1.5 py-1.5 font-medium">Décom.</th>
             </tr>
@@ -81,6 +82,12 @@ export function ArchiveEntryList({ entries, selectedEntryId, onEntrySelect }: Pr
                   <td className="px-1.5 py-1.5 font-medium text-stone-800">#{entry.id}</td>
                   <td className="max-w-0 px-1.5 py-1.5">
                     <TypeCell entry={entry} />
+                  </td>
+                  <td
+                    className="hidden truncate px-1.5 py-1.5 text-stone-600 sm:table-cell"
+                    title={entry.owner.name}
+                  >
+                    {entry.owner.name}
                   </td>
                   <td className="hidden truncate px-1.5 py-1.5 text-stone-500 sm:table-cell">
                     {formatEntryDetails(entry)}

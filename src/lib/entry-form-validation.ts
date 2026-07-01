@@ -4,6 +4,7 @@ export type EntryFormField =
   | "manualId"
   | "position"
   | "bigBagVarietyId"
+  | "ownerId"
   | "year"
   | "weight"
   | "humidity"
@@ -39,6 +40,13 @@ export function validatePosition(value: string): string | null {
 export function validateBigBagVarietyId(value: string, required: boolean): string | null {
   if (!value.trim()) {
     return required ? "Le type de graine est obligatoire" : null;
+  }
+  return null;
+}
+
+export function validateOwnerId(value: string, required: boolean): string | null {
+  if (!value.trim()) {
+    return required ? "Le propriétaire est obligatoire" : null;
   }
   return null;
 }

@@ -26,6 +26,21 @@ export const reorderBigBagVarietiesSchema = z.object({
   ids: z.array(z.string().cuid()).min(1),
 });
 
+export const createOwnerSchema = z.object({
+  name: z.string().min(1).max(100),
+  sortOrder: z.number().int().min(0).optional(),
+});
+
+export const updateOwnerSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  sortOrder: z.number().int().min(0).optional(),
+  isActive: z.boolean().optional(),
+});
+
+export const reorderOwnersSchema = z.object({
+  ids: z.array(z.string().min(1)).min(1),
+});
+
 export type SerializedBigBagVariety = {
   id: string;
   name: string;
@@ -33,10 +48,16 @@ export type SerializedBigBagVariety = {
   isBarred: boolean;
 };
 
+export type SerializedOwner = {
+  id: string;
+  name: string;
+};
+
 const entryBaseSchema = z.object({
   kind: entryKindSchema,
   position: z.string().optional().nullable(),
   bigBagVarietyId: z.string().cuid().optional().nullable(),
+  ownerId: z.string().min(1).optional().nullable(),
   year: z.number().int().min(1980).max(2100).optional().nullable(),
   weight: z.number().positive().optional().nullable(),
   humidity: z.number().min(0).max(100).optional().nullable(),
@@ -48,10 +69,11 @@ function refineEntry(
     kind?: "BIG_BAG" | "OTHER";
     position?: string | null;
     bigBagVarietyId?: string | null;
+    ownerId?: string | null;
     year?: number | null;
   },
   ctx: z.RefinementCtx,
-  options?: { requireBigBagFields?: boolean },
+  options?: { requireBigBagFields?: boolean; requireOwner?: boolean },
 ) {
   if (data.position) {
     const parsed = parsePosition(data.position);
@@ -80,13 +102,23 @@ function refineEntry(
       });
     }
   }
+
+  if (options?.requireOwner && !data.ownerId) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Le propriétaire est obligatoire",
+      path: ["ownerId"],
+    });
+  }
 }
 
 export const createEntrySchema = entryBaseSchema
   .extend({
     id: z.number().int().positive(),
   })
-  .superRefine((data, ctx) => refineEntry(data, ctx, { requireBigBagFields: true }));
+  .superRefine((data, ctx) =>
+    refineEntry(data, ctx, { requireBigBagFields: true, requireOwner: true }),
+  );
 
 export const updateEntrySchema = entryBaseSchema
   .partial()
@@ -120,6 +152,7 @@ export type SerializedEntry = {
   kind: "BIG_BAG" | "OTHER";
   position: string | null;
   bigBagVariety: SerializedBigBagVariety | null;
+  owner: SerializedOwner;
   year: number | null;
   weight: number | null;
   humidity: number | null;

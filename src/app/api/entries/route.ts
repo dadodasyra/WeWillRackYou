@@ -2,6 +2,7 @@ import { EntryKind } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { resolveBigBagVarietyId } from "@/lib/big-bag-varieties";
+import { resolveOwnerId } from "@/lib/owners";
 import { serializeEntry, positionToDb, syncEntryIdSequence, entryInclude } from "@/lib/entries";
 import { getSessionUser, jsonError, unauthorized } from "@/lib/api";
 import { createEntrySchema } from "@/lib/validations";
@@ -70,12 +71,20 @@ export async function POST(request: NextRequest) {
     return jsonError("Variété de big bag invalide ou inactive");
   }
 
+  let ownerId: string;
+  try {
+    ownerId = await resolveOwnerId(data.ownerId);
+  } catch {
+    return jsonError("Propriétaire invalide ou inactif");
+  }
+
   const entry = await prisma.entry.create({
     data: {
       id: data.id,
       kind: data.kind as EntryKind,
       ...location,
       bigBagVarietyId,
+      ownerId,
       year: data.kind === "BIG_BAG" ? data.year ?? null : null,
       weight: data.kind === "BIG_BAG" ? data.weight ?? null : null,
       humidity: data.kind === "BIG_BAG" ? data.humidity ?? null : null,

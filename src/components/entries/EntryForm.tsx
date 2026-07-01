@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { VarietySelect } from "@/components/entries/VarietySelect";
+import { OwnerSelect } from "@/components/entries/OwnerSelect";
 import {
   type EntryFormField,
   type EntryFormFieldErrors,
@@ -12,6 +13,7 @@ import {
   validateDescription,
   validateHumidity,
   validateManualId,
+  validateOwnerId,
   validatePosition,
   validateWeight,
   validateYear,
@@ -47,6 +49,7 @@ export function EntryForm({
   const [kind, setKind] = useState<"BIG_BAG" | "OTHER">(initial?.kind ?? "BIG_BAG");
   const [position, setPosition] = useState(initial?.position ?? "");
   const [bigBagVarietyId, setBigBagVarietyId] = useState(initial?.bigBagVariety?.id ?? "");
+  const [ownerId, setOwnerId] = useState(initial?.owner?.id ?? "");
   const [year, setYear] = useState(initial?.year?.toString() ?? "");
   const [weight, setWeight] = useState(initial?.weight?.toString() ?? "");
   const [humidity, setHumidity] = useState(initial?.humidity?.toString() ?? "");
@@ -80,6 +83,7 @@ export function EntryForm({
       setKind(initial.kind);
       setPosition(initial.position ?? "");
       setBigBagVarietyId(initial.bigBagVariety?.id ?? "");
+      setOwnerId(initial.owner.id);
       setYear(initial.year?.toString() ?? "");
       setWeight(initial.weight?.toString() ?? "");
       setHumidity(initial.humidity?.toString() ?? "");
@@ -108,6 +112,8 @@ export function EntryForm({
           return validatePosition(position);
         case "bigBagVarietyId":
           return validateBigBagVarietyId(bigBagVarietyId, bigBagFieldsRequired);
+        case "ownerId":
+          return validateOwnerId(ownerId, isCreate);
         case "year":
           return validateYear(year, bigBagFieldsRequired);
         case "weight":
@@ -127,6 +133,8 @@ export function EntryForm({
       position,
       bigBagVarietyId,
       bigBagFieldsRequired,
+      ownerId,
+      isCreate,
       year,
       weight,
       humidity,
@@ -192,6 +200,9 @@ export function EntryForm({
       const positionError = validatePosition(position);
       if (positionError) errors.position = positionError;
 
+      const ownerError = validateOwnerId(ownerId, true);
+      if (ownerError) errors.ownerId = ownerError;
+
       if (kind === "BIG_BAG") {
         const varietyError = validateBigBagVarietyId(bigBagVarietyId, true);
         if (varietyError) errors.bigBagVarietyId = varietyError;
@@ -217,6 +228,7 @@ export function EntryForm({
     const payload = {
       kind,
       position: position.trim() || null,
+      ownerId: ownerId || null,
       bigBagVarietyId: kind === "BIG_BAG" && bigBagVarietyId ? bigBagVarietyId : null,
       year: kind === "BIG_BAG" && year ? Number(year) : null,
       weight: kind === "BIG_BAG" && weight ? Number(weight) : null,
@@ -307,6 +319,19 @@ export function EntryForm({
           { value: "BIG_BAG", label: "Big bag" },
           { value: "OTHER", label: "Autre (bac métallique, etc.)" },
         ]}
+      />
+
+      <OwnerSelect
+        label="Propriétaire"
+        value={ownerId}
+        onChange={(value) => {
+          setOwnerId(value);
+          if (isCreate) clearFieldError("ownerId");
+        }}
+        onBlur={() => handleFieldBlur("ownerId")}
+        required={isCreate}
+        defaultToEarlBeiner={isCreate}
+        error={isCreate ? fieldErrors.ownerId : undefined}
       />
 
       <div className="space-y-1">

@@ -145,6 +145,7 @@ export function EntryListTable({
             <tr>
               <th className="w-10 px-1.5 py-1.5 font-medium">#</th>
               <th className="w-[5.75rem] px-1.5 py-1.5 font-medium">Type</th>
+              <th className="hidden w-24 px-1.5 py-1.5 font-medium md:table-cell">Propr.</th>
               <th className="w-11 px-1.5 py-1.5 font-medium">Empl.</th>
               <th className="hidden px-1.5 py-1.5 font-medium sm:table-cell">Infos</th>
               <th className="w-[6.5rem] px-1 py-1.5" />
@@ -176,6 +177,12 @@ export function EntryListTable({
                   <td className="px-1.5 py-1.5 font-medium text-stone-800">#{entry.id}</td>
                   <td className="max-w-0 px-1.5 py-1.5">
                     <TypeCell entry={entry} />
+                  </td>
+                  <td
+                    className="hidden truncate px-1.5 py-1.5 text-stone-600 md:table-cell"
+                    title={entry.owner.name}
+                  >
+                    {entry.owner.name}
                   </td>
                   <td className="truncate px-1.5 py-1.5 text-stone-600">
                     {entry.position ?? <span className="text-amber-700">-</span>}

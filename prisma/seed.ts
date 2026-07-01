@@ -45,6 +45,11 @@ const DEFAULT_VARIETIES = [
   { name: "Divers", color: "#9e9e9e", isBarred: false, sortOrder: 17 },
 ] as const;
 
+const DEFAULT_OWNERS = [
+  { name: "EARL Beiner", sortOrder: 0 },
+  { name: "Ferme kikiriki", sortOrder: 1 },
+] as const;
+
 async function migrateDeprecatedVarieties() {
   for (const [oldName, canonicalName] of Object.entries(DEPRECATED_TO_CANONICAL)) {
     const old = await prisma.bigBagVariety.findUnique({ where: { name: oldName } });
@@ -90,8 +95,20 @@ async function main() {
 
   await migrateDeprecatedVarieties();
 
+  for (const owner of DEFAULT_OWNERS) {
+    await prisma.owner.upsert({
+      where: { name: owner.name },
+      update: {
+        sortOrder: owner.sortOrder,
+        isActive: true,
+      },
+      create: owner,
+    });
+  }
+
   console.log("Utilisateur admin créé (admin / admin123)");
   console.log(`${DEFAULT_VARIETIES.length} variétés de big bags initialisées`);
+  console.log(`${DEFAULT_OWNERS.length} propriétaires initialisés`);
 }
 
 main()

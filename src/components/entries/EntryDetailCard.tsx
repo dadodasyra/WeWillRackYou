@@ -21,6 +21,7 @@ export function EntryDetailCard({ entry, actions }: Props) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1 space-y-2">
           <InfoRow label="ID" value={`#${entry.id}`} />
+          <InfoRow label="Propriétaire" value={entry.owner.name} />
           {entry.status === "ACTIVE" ? (
             <InfoRow label="Emplacement" value={entry.position} />
           ) : null}

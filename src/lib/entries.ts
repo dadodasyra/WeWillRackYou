@@ -1,11 +1,12 @@
-import { BigBagVariety, Entry, User } from "@prisma/client";
+import { BigBagVariety, Entry, Owner, User } from "@prisma/client";
 import { formatPosition, parsePosition } from "./position";
-import type { SerializedBigBagVariety, SerializedEntry } from "./validations";
+import type { SerializedBigBagVariety, SerializedEntry, SerializedOwner } from "./validations";
 
 type EntryWithUsers = Entry & {
   createdBy: Pick<User, "username">;
   lastModifiedBy: Pick<User, "username">;
   bigBagVariety: Pick<BigBagVariety, "id" | "name" | "color" | "isBarred"> | null;
+  owner: Pick<Owner, "id" | "name">;
 };
 
 /** Entrées visibles dans l’admin Archives (décommissionnées, hors kikiriki). */
@@ -27,6 +28,9 @@ export const entryInclude = {
   bigBagVariety: {
     select: { id: true, name: true, color: true, isBarred: true },
   },
+  owner: {
+    select: { id: true, name: true },
+  },
 } as const;
 
 function serializeVariety(
@@ -38,6 +42,13 @@ function serializeVariety(
     name: variety.name,
     color: variety.color,
     isBarred: variety.isBarred,
+  };
+}
+
+function serializeOwner(owner: Pick<Owner, "id" | "name">): SerializedOwner {
+  return {
+    id: owner.id,
+    name: owner.name,
   };
 }
 
@@ -56,6 +67,7 @@ export function serializeEntry(entry: EntryWithUsers): SerializedEntry {
     kind: entry.kind,
     position,
     bigBagVariety: serializeVariety(entry.bigBagVariety),
+    owner: serializeOwner(entry.owner),
     year: entry.year,
     weight: entry.weight,
     humidity: entry.humidity,
