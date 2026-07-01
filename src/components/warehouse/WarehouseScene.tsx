@@ -456,7 +456,7 @@ function WarehouseGrid({
         maxPolarAngle={Math.PI / 2.05}
         minPolarAngle={0.2}
         touches={{
-          ONE: THREE.TOUCH.PAN,
+          ONE: THREE.TOUCH.ROTATE,
           TWO: THREE.TOUCH.DOLLY_PAN,
         }}
       />
