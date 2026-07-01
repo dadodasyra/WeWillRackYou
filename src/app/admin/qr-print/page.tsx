@@ -5,12 +5,13 @@ import QRCode from "qrcode";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { QrLabelSticker } from "@/components/admin/QrLabelSticker";
-import { labelCount, MAX_LABELS } from "@/lib/label-layout";
+import { buildLabelIdRange, labelCount, MAX_LABELS } from "@/lib/label-layout";
 import { buildEntryQrUrl } from "@/lib/qr";
 import "./print/print.css";
 
 const PREVIEW_COUNT = 3;
 const OFFSET_STORAGE_KEY = "qr-print-correct-offset";
+const DESC_STORAGE_KEY = "qr-print-descending";
 
 type PreviewLabel = {
   id: number;
@@ -39,18 +40,26 @@ export default function QrPrintPage() {
   const [error, setError] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [correctPrinterOffset, setCorrectPrinterOffset] = useState(false);
+  const [printDescending, setPrintDescending] = useState(true);
   const [previews, setPreviews] = useState<PreviewLabel[]>([]);
   const [baseUrl, setBaseUrl] = useState("");
 
   useEffect(() => {
     setBaseUrl(window.location.origin);
-    const saved = localStorage.getItem(OFFSET_STORAGE_KEY);
-    if (saved === "1") setCorrectPrinterOffset(true);
+    const savedOffset = localStorage.getItem(OFFSET_STORAGE_KEY);
+    if (savedOffset === "1") setCorrectPrinterOffset(true);
+    const savedDesc = localStorage.getItem(DESC_STORAGE_KEY);
+    if (savedDesc === "0") setPrintDescending(false);
   }, []);
 
   function handleOffsetChange(checked: boolean) {
     setCorrectPrinterOffset(checked);
     localStorage.setItem(OFFSET_STORAGE_KEY, checked ? "1" : "0");
+  }
+
+  function handleDescendingChange(checked: boolean) {
+    setPrintDescending(checked);
+    localStorage.setItem(DESC_STORAGE_KEY, checked ? "1" : "0");
   }
 
   useEffect(() => {
@@ -78,8 +87,9 @@ export default function QrPrintPage() {
     if (!rangeValid) return null;
     const params = new URLSearchParams({ from: fromId, to: toId });
     if (correctPrinterOffset) params.set("offset", "1");
+    if (!printDescending) params.set("desc", "0");
     return params;
-  }, [fromId, toId, rangeValid, correctPrinterOffset]);
+  }, [fromId, toId, rangeValid, correctPrinterOffset, printDescending]);
 
   const printUrl = rangeParams ? `/admin/qr-print/print?${rangeParams.toString()}` : null;
   const pdfUrl = rangeParams ? `/api/admin/qr-labels/pdf?${rangeParams.toString()}` : null;
@@ -91,10 +101,7 @@ export default function QrPrintPage() {
       return;
     }
 
-    const ids = Array.from(
-      { length: Math.min(PREVIEW_COUNT, count) },
-      (_, index) => from + index,
-    );
+    const ids = buildLabelIdRange(from, to, printDescending).slice(0, PREVIEW_COUNT);
 
     const nextPreviews = await Promise.all(
       ids.map(async (id) => ({
@@ -108,7 +115,7 @@ export default function QrPrintPage() {
     );
 
     setPreviews(nextPreviews);
-  }, [baseUrl, count, from, rangeValid]);
+  }, [baseUrl, count, from, to, printDescending, rangeValid]);
 
   useEffect(() => {
     loadPreviews();
@@ -168,6 +175,15 @@ export default function QrPrintPage() {
             {count} étiquette{count > 1 ? "s" : ""} à imprimer
           </p>
         ) : null}
+        <label className="flex items-start gap-2 text-sm text-stone-700">
+          <input
+            type="checkbox"
+            className="mt-0.5"
+            checked={printDescending}
+            onChange={(e) => handleDescendingChange(e.target.checked)}
+          />
+          <span>Imprimer en ordre décroissant (du plus grand ID au plus petit)</span>
+        </label>
         <label className="flex items-start gap-2 text-sm text-stone-700">
           <input
             type="checkbox"

@@ -45,6 +45,11 @@ export function labelCount(from: number, to: number): number {
   return to - from + 1;
 }
 
+export function buildLabelIdRange(from: number, to: number, descending = false): number[] {
+  const ids = Array.from({ length: labelCount(from, to) }, (_, index) => from + index);
+  return descending ? ids.reverse() : ids;
+}
+
 export function labelWidthPx(): number {
   return Math.round(LABEL_WIDTH_MM * DOTS_PER_MM);
 }

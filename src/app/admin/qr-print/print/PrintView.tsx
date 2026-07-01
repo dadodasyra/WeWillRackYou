@@ -5,7 +5,7 @@ import QRCode from "qrcode";
 import { Button } from "@/components/ui/Button";
 import { QrLabelSticker } from "@/components/admin/QrLabelSticker";
 import { buildEntryQrUrl } from "@/lib/qr";
-import { labelCount } from "@/lib/label-layout";
+import { buildLabelIdRange, labelCount } from "@/lib/label-layout";
 import "./print.css";
 
 const QR_PIXEL_SIZE = 1280;
@@ -20,9 +20,10 @@ type Props = {
   to: number;
   baseUrl: string;
   correctPrinterOffset: boolean;
+  printDescending: boolean;
 };
 
-export function PrintView({ from, to, baseUrl, correctPrinterOffset }: Props) {
+export function PrintView({ from, to, baseUrl, correctPrinterOffset, printDescending }: Props) {
   const [labels, setLabels] = useState<Label[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -43,7 +44,7 @@ export function PrintView({ from, to, baseUrl, correctPrinterOffset }: Props) {
       setError("");
 
       try {
-        const ids = Array.from({ length: labelCount(from, to) }, (_, index) => from + index);
+        const ids = buildLabelIdRange(from, to, printDescending);
         const nextLabels = await Promise.all(
           ids.map(async (id) => ({
             id,
@@ -73,7 +74,7 @@ export function PrintView({ from, to, baseUrl, correctPrinterOffset }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [from, to, baseUrl]);
+  }, [from, to, baseUrl, printDescending]);
 
   useEffect(() => {
     if (labels.length === 0 || printedRef.current) return;
