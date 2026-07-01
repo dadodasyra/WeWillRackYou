@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArchiveEntryList } from "@/components/entries/ArchiveEntryList";
 import { ClearAllArchivesModal } from "@/components/entries/ClearAllArchivesModal";
 import { DeleteArchiveEntryModal } from "@/components/entries/DeleteArchiveEntryModal";
+import { RestoreArchiveEntryModal } from "@/components/entries/RestoreArchiveEntryModal";
 import { EntryDetailCard } from "@/components/entries/EntryDetailCard";
 import type { SerializedEntry } from "@/lib/validations";
 
@@ -47,6 +48,7 @@ export default function ArchivesPage() {
   const [loading, setLoading] = useState(true);
   const [selectedEntryId, setSelectedEntryId] = useState<number | null>(null);
   const [deleteEntry, setDeleteEntry] = useState<SerializedEntry | null>(null);
+  const [restoreEntry, setRestoreEntry] = useState<SerializedEntry | null>(null);
   const [clearAllOpen, setClearAllOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -142,6 +144,13 @@ export default function ArchivesPage() {
                     👁️
                   </ArchiveActionButton>
                   <ArchiveActionButton
+                    label="Remettre en entrepôt"
+                    variant="view"
+                    onClick={() => setRestoreEntry(selectedEntry)}
+                  >
+                    ↩️
+                  </ArchiveActionButton>
+                  <ArchiveActionButton
                     label="Supprimer définitivement"
                     variant="danger"
                     onClick={() => setDeleteEntry(selectedEntry)}
@@ -160,6 +169,21 @@ export default function ArchivesPage() {
           />
         </>
       )}
+
+      <RestoreArchiveEntryModal
+        entry={restoreEntry}
+        open={!!restoreEntry}
+        onClose={() => setRestoreEntry(null)}
+        onSuccess={() => {
+          const restoredId = restoreEntry?.id;
+          setRestoreEntry(null);
+          setSelectedEntryId(null);
+          if (restoredId != null) {
+            setMessage(`Entrée #${restoredId} remise en entrepôt.`);
+          }
+          load();
+        }}
+      />
 
       <DeleteArchiveEntryModal
         entry={deleteEntry}
