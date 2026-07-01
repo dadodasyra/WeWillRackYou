@@ -19,9 +19,10 @@ type Props = {
   from: number;
   to: number;
   baseUrl: string;
+  correctPrinterOffset: boolean;
 };
 
-export function PrintView({ from, to, baseUrl }: Props) {
+export function PrintView({ from, to, baseUrl, correctPrinterOffset }: Props) {
   const [labels, setLabels] = useState<Label[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -117,6 +118,7 @@ export function PrintView({ from, to, baseUrl }: Props) {
             key={label.id}
             id={label.id}
             dataUrl={label.dataUrl}
+            correctPrinterOffset={correctPrinterOffset}
           />
         ))}
       </div>

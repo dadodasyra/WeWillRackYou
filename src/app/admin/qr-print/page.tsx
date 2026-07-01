@@ -10,6 +10,7 @@ import { buildEntryQrUrl } from "@/lib/qr";
 import "./print/print.css";
 
 const PREVIEW_COUNT = 3;
+const OFFSET_STORAGE_KEY = "qr-print-correct-offset";
 
 type PreviewLabel = {
   id: number;
@@ -37,12 +38,20 @@ export default function QrPrintPage() {
   const [toId, setToId] = useState("");
   const [error, setError] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [correctPrinterOffset, setCorrectPrinterOffset] = useState(false);
   const [previews, setPreviews] = useState<PreviewLabel[]>([]);
   const [baseUrl, setBaseUrl] = useState("");
 
   useEffect(() => {
     setBaseUrl(window.location.origin);
+    const saved = localStorage.getItem(OFFSET_STORAGE_KEY);
+    if (saved === "1") setCorrectPrinterOffset(true);
   }, []);
+
+  function handleOffsetChange(checked: boolean) {
+    setCorrectPrinterOffset(checked);
+    localStorage.setItem(OFFSET_STORAGE_KEY, checked ? "1" : "0");
+  }
 
   useEffect(() => {
     fetch("/api/entries/next-id")
@@ -67,8 +76,10 @@ export default function QrPrintPage() {
 
   const rangeParams = useMemo(() => {
     if (!rangeValid) return null;
-    return new URLSearchParams({ from: fromId, to: toId });
-  }, [fromId, toId, rangeValid]);
+    const params = new URLSearchParams({ from: fromId, to: toId });
+    if (correctPrinterOffset) params.set("offset", "1");
+    return params;
+  }, [fromId, toId, rangeValid, correctPrinterOffset]);
 
   const printUrl = rangeParams ? `/admin/qr-print/print?${rangeParams.toString()}` : null;
   const pdfUrl = rangeParams ? `/api/admin/qr-labels/pdf?${rangeParams.toString()}` : null;
@@ -157,6 +168,18 @@ export default function QrPrintPage() {
             {count} étiquette{count > 1 ? "s" : ""} à imprimer
           </p>
         ) : null}
+        <label className="flex items-start gap-2 text-sm text-stone-700">
+          <input
+            type="checkbox"
+            className="mt-0.5"
+            checked={correctPrinterOffset}
+            onChange={(e) => handleOffsetChange(e.target.checked)}
+          />
+          <span>
+            Corriger le décalage horizontal de l&apos;imprimante (décale le contenu de 5 mm vers
+            la gauche)
+          </span>
+        </label>
         <div className="space-y-2">
           <Button type="button" disabled={!printUrl} onClick={handlePrint}>
             Imprimer les étiquettes
@@ -175,7 +198,11 @@ export default function QrPrintPage() {
           <div className="flex flex-wrap justify-center gap-4">
             {previews.map((preview) => (
               <div key={preview.id} className="print-preview-frame">
-                <QrLabelSticker id={preview.id} dataUrl={preview.dataUrl} />
+                <QrLabelSticker
+                  id={preview.id}
+                  dataUrl={preview.dataUrl}
+                  correctPrinterOffset={correctPrinterOffset}
+                />
               </div>
             ))}
           </div>

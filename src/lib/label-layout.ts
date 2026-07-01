@@ -9,6 +9,9 @@ export const LABEL_ID_GAP_MM = 2;
 export const QR_SIZE_MM = 52;
 export const ID_TEXT_MM = 6;
 
+/** Shift content left to compensate SATO driver horizontal offset (15 mm L / 5 mm R → 5 mm). */
+export const PRINTER_OFFSET_CORRECTION_MM = 5;
+
 export type LabelContentLayout = {
   qrLeftMm: number;
   qrTopMm: number;

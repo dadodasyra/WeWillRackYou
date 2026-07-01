@@ -48,10 +48,23 @@
   display: grid;
   align-content: center;
   justify-items: center;
-  gap: 2mm;
   overflow: hidden;
   background: white;
   color: #000;
+}
+
+.print-label-content {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 2mm;
+}
+
+@media print {
+  .print-label-content {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 }
 
 .print-label:not(:first-child) {

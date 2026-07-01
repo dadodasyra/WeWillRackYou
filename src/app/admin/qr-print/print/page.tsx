@@ -4,7 +4,7 @@ import { getRequestBaseUrl } from "@/lib/request-base-url";
 import { PrintView } from "./PrintView";
 
 type Props = {
-  searchParams: Promise<{ from?: string; to?: string }>;
+  searchParams: Promise<{ from?: string; to?: string; offset?: string }>;
 };
 
 export default async function QrPrintLabelsPage({ searchParams }: Props) {
@@ -16,6 +16,14 @@ export default async function QrPrintLabelsPage({ searchParams }: Props) {
   }
 
   const baseUrl = await getRequestBaseUrl();
+  const correctPrinterOffset = params.offset === "1";
 
-  return <PrintView from={range.from} to={range.to} baseUrl={baseUrl} />;
+  return (
+    <PrintView
+      from={range.from}
+      to={range.to}
+      baseUrl={baseUrl}
+      correctPrinterOffset={correctPrinterOffset}
+    />
+  );
 }
