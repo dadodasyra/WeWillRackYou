@@ -1,5 +1,7 @@
 import type { SerializedEntry } from "./validations";
 
+const DEFAULT_OWNER_NAME = "EARL Beiner";
+
 export function getVarietyLabel(entry: SerializedEntry): string | null {
   if (entry.kind !== "BIG_BAG" || !entry.bigBagVariety) return null;
   return entry.bigBagVariety.name;
@@ -12,6 +14,11 @@ export function abbreviateVarietyName(name: string, maxLength = 11): string {
     short = `${short.slice(0, maxLength - 1)}…`;
   }
   return short;
+}
+
+function getNonDefaultOwnerLabel(entry: SerializedEntry): string | null {
+  if (entry.owner.name === DEFAULT_OWNER_NAME) return null;
+  return entry.owner.name;
 }
 
 export function formatEntryQuickSummary(entry: SerializedEntry): string {
@@ -31,12 +38,17 @@ export function formatEntryQuickSummary(entry: SerializedEntry): string {
 
 /** Détails sans le type de graine (déjà affiché ailleurs). */
 export function formatEntryDetails(entry: SerializedEntry): string {
+  const ownerLabel = getNonDefaultOwnerLabel(entry);
+
   if (entry.kind === "OTHER") {
     const text = entry.description?.trim();
-    return text ? (text.length > 40 ? `${text.slice(0, 39)}…` : text) : "-";
+    const description = text ? (text.length > 40 ? `${text.slice(0, 39)}…` : text) : null;
+    const parts = [ownerLabel, description].filter(Boolean);
+    return parts.length > 0 ? parts.join(" · ") : "-";
   }
 
   const parts: string[] = [];
+  if (ownerLabel) parts.push(ownerLabel);
   if (entry.year) parts.push(String(entry.year));
   if (entry.weight) parts.push(`${entry.weight} kg`);
   if (entry.humidity != null) parts.push(`${entry.humidity} % H₂O`);
