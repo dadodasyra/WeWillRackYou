@@ -17,6 +17,9 @@ export const metadata: Metadata = {
   title: "WeWillRackYou",
   description: "Gestion d'inventaire pour PME agricole",
   manifest: "/manifest.webmanifest",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export const viewport: Viewport = {
