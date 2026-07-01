@@ -69,7 +69,6 @@ export default function QrPrintPage() {
   }, [fromId, toId, rangeValid]);
 
   const printUrl = rangeParams ? `/admin/qr-print/print?${rangeParams.toString()}` : null;
-  const csvUrl = rangeParams ? `/api/admin/qr-labels/csv?${rangeParams.toString()}` : null;
   const pdfUrl = rangeParams ? `/api/admin/qr-labels/pdf?${rangeParams.toString()}` : null;
   const sbplUrl = rangeParams ? `/api/admin/qr-labels?${rangeParams.toString()}` : null;
 
@@ -160,14 +159,6 @@ export default function QrPrintPage() {
           <Button type="button" disabled={!printUrl} onClick={handlePrint}>
             Imprimer les étiquettes
           </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            disabled={!csvUrl}
-            onClick={() => handleDownload(csvUrl)}
-          >
-            Exporter pour NiceLabel (CSV)
-          </Button>
         </div>
       </div>
 
@@ -216,11 +207,6 @@ export default function QrPrintPage() {
         <p className="pt-1 text-stone-500">
           Configuration initiale (une fois) : dans les propriétés de l&apos;imprimante Windows,
           enregistrez ces réglages comme format par défaut.
-        </p>
-        <h2 className="pt-2 font-semibold text-stone-800">NiceLabel</h2>
-        <p>
-          Téléchargez le CSV, puis utilisez-le comme source de données dans votre modèle NiceLabel
-          existant (colonnes <code className="text-xs">id</code> et <code className="text-xs">url</code>).
         </p>
       </section>
 
