@@ -117,7 +117,6 @@ export function PrintView({ from, to, baseUrl }: Props) {
             key={label.id}
             id={label.id}
             dataUrl={label.dataUrl}
-            qrPixelSize={QR_PIXEL_SIZE}
           />
         ))}
       </div>

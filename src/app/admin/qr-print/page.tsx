@@ -175,11 +175,7 @@ export default function QrPrintPage() {
           <div className="flex flex-wrap justify-center gap-4">
             {previews.map((preview) => (
               <div key={preview.id} className="print-preview-frame">
-                <QrLabelSticker
-                  id={preview.id}
-                  dataUrl={preview.dataUrl}
-                  qrPixelSize={520}
-                />
+                <QrLabelSticker id={preview.id} dataUrl={preview.dataUrl} />
               </div>
             ))}
           </div>

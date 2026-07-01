@@ -44,16 +44,14 @@
   height: 70mm;
   max-height: 70mm;
   margin: 0 auto;
-  padding: 4mm;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  padding: 0;
+  display: grid;
+  align-content: center;
+  justify-items: center;
   gap: 2mm;
   overflow: hidden;
   background: white;
   color: #000;
-  text-align: center;
 }
 
 .print-label:not(:first-child) {
@@ -64,11 +62,8 @@
 .print-label-qr {
   width: 52mm;
   height: 52mm;
-  max-width: 52mm;
-  max-height: 52mm;
-  flex-shrink: 0;
+  min-width: 0;
   display: block;
-  margin: 0 auto;
   object-fit: contain;
 }
 
