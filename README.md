@@ -37,9 +37,75 @@ npm run db:seed
 npm run dev
 ```
 
+`npm run dev` occupe le terminal courant : la session s'arrête si vous fermez la fenêtre ou coupez SSH. Pour un serveur qui tourne en arrière-plan (test local prolongé, tunnel Cloudflare, VPS sans Docker pour l'app), utilisez [PM2](#exécution-en-arrière-plan-pm2).
+
 Ouvrir [http://localhost:3000](http://localhost:3000).
 
 **Compte initial :** `admin` / `admin123` (à changer en production).
+
+## Exécution en arrière-plan (PM2)
+
+[PM2](https://pm2.keymetrics.io/) garde le processus Node actif après fermeture du terminal et redémarre l'app en cas de crash.
+
+### Installation
+
+```bash
+npm install -g pm2
+```
+
+### Mode production (recommandé)
+
+Le projet est configuré avec `output: "standalone"` : `next start` ne convient pas. Après le build, lancer le serveur minimal avec :
+
+```bash
+npm run build
+pm2 start npm --name wewillrackyou -- start
+```
+
+(`npm run start` exécute `node .next/standalone/server.js` ; le script `postbuild` copie `public`, les assets statiques et Prisma dans ce dossier.)
+
+### Mode développement (hot reload)
+
+Utile pour itérer sans terminal ouvert ; moins stable qu'en production (notamment derrière un tunnel) :
+
+```bash
+pm2 start npm --name wewillrackyou-dev -- run dev
+```
+
+### Commandes utiles
+
+| Commande | Description |
+|----------|-------------|
+| `pm2 status` | État des processus |
+| `pm2 logs wewillrackyou` | Voir les logs en direct |
+| `pm2 restart wewillrackyou` | Redémarrer (après changement de `.env`, refaire `npm run build` si besoin) |
+| `pm2 stop wewillrackyou` | Arrêter |
+| `pm2 delete wewillrackyou` | Retirer de PM2 |
+
+Sur un VPS Linux, pour relancer automatiquement au reboot :
+
+```bash
+pm2 save
+pm2 startup
+# exécuter la commande affichée par pm2 startup (souvent avec sudo)
+```
+
+Fichier `ecosystem.config.cjs` optionnel à la racine du projet :
+
+```js
+module.exports = {
+  apps: [
+    {
+      name: "wewillrackyou",
+      script: ".next/standalone/server.js",
+      cwd: __dirname,
+      env: { NODE_ENV: "production" },
+    },
+  ],
+};
+```
+
+Puis : `pm2 start ecosystem.config.cjs`
 
 ## Fonctionnalités
 
@@ -128,8 +194,10 @@ Format : `{rangée}{niveau}{colonne}` — ex. `A11` = rangée A, niveau 1, colon
 
 | Commande | Description |
 |----------|-------------|
-| `npm run dev` | Serveur de développement |
+| `npm run dev` | Serveur de développement (terminal attaché) |
 | `npm run build` | Build production |
+| `npm run start` | Serveur production (`node .next/standalone/server.js`, après `npm run build`) |
 | `npm run db:push` | Synchroniser le schéma Prisma |
 | `npm run db:seed` | Créer l'utilisateur admin |
 | `npm run db:studio` | Interface Prisma Studio |
+| `pm2 start npm --name wewillrackyou -- start` | Lancer en arrière-plan (après `npm run build`) |
