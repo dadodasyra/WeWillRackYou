@@ -176,7 +176,7 @@ export default function QrPrintPage() {
             onChange={(e) => handleOffsetChange(e.target.checked)}
           />
           <span>
-            Corriger le décalage horizontal de l&apos;imprimante (décale le contenu de 5 mm vers
+            Corriger le décalage horizontal de l&apos;imprimante (décale le contenu de 6 mm vers
             la gauche)
           </span>
         </label>
