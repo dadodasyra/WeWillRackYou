@@ -2,6 +2,8 @@
 
 Application web mobile-first de gestion d'inventaire pour PME agricole (entrepôt, sacs, QR codes, paiements Ferme du kikiriki).
 
+A cursor vibecoded app, again..
+
 ## Prérequis
 
 - Node.js 20+
