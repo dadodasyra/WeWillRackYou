@@ -4,8 +4,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { QrLabelSticker } from "@/components/admin/QrLabelSticker";
 import { labelCount, MAX_LABELS } from "@/lib/label-layout";
 import { buildEntryQrUrl } from "@/lib/qr";
+import "./print/print.css";
 
 const PREVIEW_COUNT = 3;
 
@@ -88,7 +90,7 @@ export default function QrPrintPage() {
         id,
         dataUrl: await QRCode.toDataURL(buildEntryQrUrl(id, baseUrl), {
           margin: 1,
-          width: 160,
+          width: 520,
           errorCorrectionLevel: "M",
         }),
       })),
@@ -168,25 +170,16 @@ export default function QrPrintPage() {
         <section className="space-y-3 rounded-2xl border border-stone-200 bg-white p-4">
           <h2 className="font-semibold">Aperçu</h2>
           <p className="text-sm text-stone-600">
-            Aperçu des {previews.length} premières étiquettes (écran uniquement).
+            Même mise en page que l&apos;impression.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             {previews.map((preview) => (
-              <div
-                key={preview.id}
-                className="flex flex-col items-center rounded-xl border border-stone-200 bg-stone-50 p-3"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={preview.dataUrl}
-                  alt={`QR code ${preview.id}`}
-                  width={160}
-                  height={160}
-                  className="bg-white"
+              <div key={preview.id} className="print-preview-frame">
+                <QrLabelSticker
+                  id={preview.id}
+                  dataUrl={preview.dataUrl}
+                  qrPixelSize={520}
                 />
-                <p className="mt-2 text-lg font-semibold tabular-nums text-stone-900">
-                  {preview.id}
-                </p>
               </div>
             ))}
           </div>

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import { Button } from "@/components/ui/Button";
+import { QrLabelSticker } from "@/components/admin/QrLabelSticker";
 import { buildEntryQrUrl } from "@/lib/qr";
 import { labelCount } from "@/lib/label-layout";
 import "./print.css";
@@ -112,17 +113,12 @@ export function PrintView({ from, to, baseUrl }: Props) {
 
       <div className="print-sheet">
         {labels.map((label) => (
-          <div key={label.id} className="print-label">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={label.dataUrl}
-              alt={`QR code ${label.id}`}
-              className="print-label-qr"
-              width={QR_PIXEL_SIZE}
-              height={QR_PIXEL_SIZE}
-            />
-            <p className="print-label-id">{label.id}</p>
-          </div>
+          <QrLabelSticker
+            key={label.id}
+            id={label.id}
+            dataUrl={label.dataUrl}
+            qrPixelSize={QR_PIXEL_SIZE}
+          />
         ))}
       </div>
     </>

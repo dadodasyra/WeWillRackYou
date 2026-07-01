@@ -2,12 +2,12 @@ export const MAX_LABELS = 200;
 export const DOTS_PER_MM = 24;
 export const LABEL_WIDTH_MM = 80;
 export const LABEL_HEIGHT_MM = 70;
-export const LABEL_MARGIN_TOP_MM = 12;
+export const LABEL_MARGIN_TOP_MM = 6;
 export const LABEL_MARGIN_BOTTOM_MM = 6;
-export const LABEL_MARGIN_SIDE_MM = 4;
+export const LABEL_MARGIN_SIDE_MM = 0;
 export const LABEL_ID_GAP_MM = 2;
-export const QR_SIZE_MM = 38;
-export const ID_TEXT_MM = 5;
+export const QR_SIZE_MM = 52;
+export const ID_TEXT_MM = 6;
 
 export type LabelContentLayout = {
   qrLeftMm: number;
