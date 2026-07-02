@@ -23,7 +23,7 @@ import {
   SLOT_SIZE,
 } from "@/lib/warehouse-layout";
 import { formatPosition } from "@/lib/position";
-import { entryMatchesFilters } from "@/lib/entry-filters";
+import { entryMatchesFilters, hasActiveEntryFilters } from "@/lib/entry-filters";
 import { getStripedVarietyTexture, getVarietyEmissive } from "@/lib/variety-color";
 import type { SerializedEntry } from "@/lib/validations";
 
@@ -81,21 +81,24 @@ function Slot({
   const variety = entry?.bigBagVariety ?? null;
   const colors = LEVEL_COLORS[level] ?? LEVEL_COLORS[0];
 
-  const filterActive = Boolean(highlightVarietyId || highlightYear != null);
-  const slotMatchesFilter =
-    occupied &&
-    entry != null &&
-    entryMatchesFilters(entry, {
-      varietyId: highlightVarietyId ?? undefined,
+  const filterCriteria = useMemo(
+    () => ({
+      varietyId: highlightVarietyId || undefined,
       year: highlightYear ?? undefined,
-    });
-  const showOccupied = occupied && (!filterActive || slotMatchesFilter || selected);
-  const isDimmed = filterActive && !selected && !showOccupied;
+    }),
+    [highlightVarietyId, highlightYear],
+  );
+  const filterActive = hasActiveEntryFilters(filterCriteria);
+  const matchesFilter =
+    occupied && entry != null && entryMatchesFilters(entry, filterCriteria);
+  const showEntry = occupied && (!filterActive || matchesFilter || selected);
+  const showDimmedEmpty = filterActive && !occupied && !selected;
+  const hideFilteredOccupied = filterActive && occupied && !matchesFilter && !selected;
 
   const stripeTexture = useMemo(() => {
-    if (selected || !variety?.isBarred || isDimmed || !showOccupied) return null;
+    if (!showEntry || selected || !variety?.isBarred) return null;
     return getStripedVarietyTexture(variety.color, true);
-  }, [variety, isDimmed, showOccupied, selected]);
+  }, [showEntry, selected, variety]);
 
   const useStripeMap = !!stripeTexture && !selected;
 
@@ -114,50 +117,55 @@ function Slot({
     level,
   );
 
-  let color = showOccupied ? colors.occupied : colors.empty;
-  let emissive = showOccupied ? "#14532d" : "#000000";
-  let emissiveIntensity = showOccupied ? 0.15 : 0;
-  let opacity = showOccupied || selected ? 1 : 0.9;
+  let color = colors.empty;
+  let emissive = "#000000";
+  let emissiveIntensity = 0;
+  let opacity = 0.9;
+  let renderVisible = true;
 
-  if (showOccupied && variety && !isDimmed && !useStripeMap) {
-    color = variety.color;
-    emissive = getVarietyEmissive(variety.color);
-    emissiveIntensity = 0.25;
-  }
-
-  if (isDimmed) {
-    color = colors.empty;
-    emissive = "#000000";
-    emissiveIntensity = 0;
+  if (showEntry) {
+    if (selected) {
+      color = SELECTED_COLOR;
+      emissive = SELECTED_EMISSIVE;
+      emissiveIntensity = 0.55;
+      opacity = 1;
+    } else if (useStripeMap) {
+      color = "#ffffff";
+      opacity = 1;
+    } else if (variety) {
+      color = variety.color;
+      emissive = getVarietyEmissive(variety.color);
+      emissiveIntensity = 0.25;
+      opacity = 1;
+    } else {
+      color = colors.occupied;
+      emissive = "#14532d";
+      emissiveIntensity = 0.15;
+      opacity = 1;
+    }
+  } else if (hideFilteredOccupied) {
+    renderVisible = false;
+  } else if (showDimmedEmpty) {
     opacity = 0.1;
   }
 
-  if (useStripeMap) {
-    color = "#ffffff";
-    emissive = "#000000";
-    emissiveIntensity = 0;
-  }
-
-  if (selected) {
-    color = SELECTED_COLOR;
-    emissive = SELECTED_EMISSIVE;
-    emissiveIntensity = 0.55;
-    opacity = 1;
-  }
-
   return (
-    <mesh position={[x, y, z]} renderOrder={selected ? 2 : isDimmed ? -1 : 0}>
-      <boxGeometry args={[SLOT_SIZE, SLOT_SIZE, SLOT_SIZE]} />
-      <meshStandardMaterial
-        ref={materialRef}
-        color={color}
-        map={useStripeMap ? stripeTexture : undefined}
-        emissive={emissive}
-        emissiveIntensity={emissiveIntensity}
-        transparent={opacity < 1}
-        opacity={opacity}
-        depthWrite={opacity > 0.35}
-      />
+    <group position={[x, y, z]}>
+      {renderVisible ? (
+        <mesh renderOrder={selected ? 2 : 0}>
+          <boxGeometry args={[SLOT_SIZE, SLOT_SIZE, SLOT_SIZE]} />
+          <meshStandardMaterial
+            ref={materialRef}
+            color={color}
+            map={useStripeMap ? stripeTexture : null}
+            emissive={emissive}
+            emissiveIntensity={emissiveIntensity}
+            transparent={opacity < 1}
+            opacity={opacity}
+            depthWrite
+          />
+        </mesh>
+      ) : null}
       <mesh
         onClick={(e) => {
           e.stopPropagation();
@@ -174,7 +182,7 @@ function Slot({
         <boxGeometry args={[SLOT_SIZE * 1.02, SLOT_SIZE * 1.02, SLOT_SIZE * 1.02]} />
         <meshBasicMaterial visible={false} />
       </mesh>
-    </mesh>
+    </group>
   );
 }
 

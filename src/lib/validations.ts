@@ -94,13 +94,6 @@ function refineEntry(
         path: ["bigBagVarietyId"],
       });
     }
-    if (data.year == null) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "L'année est obligatoire",
-        path: ["year"],
-      });
-    }
   }
 
   if (options?.requireOwner && !data.ownerId) {

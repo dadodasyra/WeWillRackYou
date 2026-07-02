@@ -207,12 +207,12 @@ export default function HomePage() {
         </div>
         {hasActiveEntryFilters(filterCriteria) ? (
           <p className="text-xs text-stone-500">
-            Carte : seuls les sacs{" "}
+            Mis en évidence : {" "}
             {highlightVarietyName ? <strong>{highlightVarietyName}</strong> : null}
             {highlightVarietyName && filterCriteria.year != null ? " de " : null}
             {!highlightVarietyName && filterCriteria.year != null ? "de " : null}
             {filterCriteria.year != null ? <strong>{filterCriteria.year}</strong> : null}{" "}
-            sont mis en évidence. <strong>{formatWeightKg(filteredWeightKg)}</strong>
+            . <strong>{formatWeightKg(filteredWeightKg)}</strong>
           </p>
         ) : null}
       </div>

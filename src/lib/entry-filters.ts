@@ -10,7 +10,7 @@ export function entryMatchesFilters(
   { varietyId, year }: EntryFilterCriteria,
 ): boolean {
   if (varietyId && entry.bigBagVariety?.id !== varietyId) return false;
-  if (year != null && entry.year !== year) return false;
+  if (year != null && Number(entry.year) !== Number(year)) return false;
   return true;
 }
 

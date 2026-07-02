@@ -115,7 +115,7 @@ export function EntryForm({
         case "ownerId":
           return validateOwnerId(ownerId, isCreate);
         case "year":
-          return validateYear(year, bigBagFieldsRequired);
+          return validateYear(year);
         case "weight":
           return validateWeight(weight);
         case "humidity":
@@ -206,7 +206,7 @@ export function EntryForm({
       if (kind === "BIG_BAG") {
         const varietyError = validateBigBagVarietyId(bigBagVarietyId, true);
         if (varietyError) errors.bigBagVarietyId = varietyError;
-        const yearError = validateYear(year, true);
+        const yearError = validateYear(year);
         if (yearError) errors.year = yearError;
         const weightError = validateWeight(weight);
         if (weightError) errors.weight = weightError;
@@ -264,7 +264,7 @@ export function EntryForm({
       {requireManualId && !initial ? (
         <div className="space-y-2">
           <Input
-            label="Identifiant (numéro du QR code)"
+            label="Identifiant (numéro du QR code) *"
             type="number"
             inputMode="numeric"
             value={manualId}
@@ -299,7 +299,7 @@ export function EntryForm({
       ) : null}
 
       <Select
-        label="Type d'entrée"
+        label="Type d'entrée *"
         value={kind}
         onChange={(e) => {
           const newKind = e.target.value as "BIG_BAG" | "OTHER";
@@ -382,7 +382,7 @@ export function EntryForm({
             error={isCreate ? fieldErrors.bigBagVarietyId : undefined}
           />
           <Input
-            label="Année *"
+            label="Année"
             type="number"
             inputMode="numeric"
             value={year}
@@ -391,8 +391,6 @@ export function EntryForm({
               if (isCreate) clearFieldError("year");
             }}
             onBlur={() => handleFieldBlur("year")}
-            placeholder="Ex. 2024"
-            required={isCreate}
             error={isCreate ? fieldErrors.year : undefined}
           />
           <Input
