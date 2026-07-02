@@ -7,6 +7,12 @@ import { Input } from "@/components/ui/Input";
 import { QrLabelSticker } from "@/components/admin/QrLabelSticker";
 import { buildLabelIdRange, labelCount, MAX_LABELS } from "@/lib/label-layout";
 import { buildEntryQrUrl } from "@/lib/qr";
+import {
+  formatLastQrPrintRange,
+  loadLastQrPrintRange,
+  saveLastQrPrintRange,
+  type SavedQrPrintRange,
+} from "@/lib/qr-print-storage";
 import "./print/print.css";
 
 const PREVIEW_COUNT = 3;
@@ -43,6 +49,7 @@ export default function QrPrintPage() {
   const [printDescending, setPrintDescending] = useState(true);
   const [previews, setPreviews] = useState<PreviewLabel[]>([]);
   const [baseUrl, setBaseUrl] = useState("");
+  const [lastPrintedRange, setLastPrintedRange] = useState<SavedQrPrintRange | null>(null);
 
   useEffect(() => {
     setBaseUrl(window.location.origin);
@@ -50,6 +57,18 @@ export default function QrPrintPage() {
     if (savedOffset === "1") setCorrectPrinterOffset(true);
     const savedDesc = localStorage.getItem(DESC_STORAGE_KEY);
     if (savedDesc === "0") setPrintDescending(false);
+    setLastPrintedRange(loadLastQrPrintRange());
+
+    function refreshLastPrintedRange() {
+      setLastPrintedRange(loadLastQrPrintRange());
+    }
+
+    window.addEventListener("focus", refreshLastPrintedRange);
+    window.addEventListener("storage", refreshLastPrintedRange);
+    return () => {
+      window.removeEventListener("focus", refreshLastPrintedRange);
+      window.removeEventListener("storage", refreshLastPrintedRange);
+    };
   }, []);
 
   function handleOffsetChange(checked: boolean) {
@@ -137,6 +156,8 @@ export default function QrPrintPage() {
 
   function handleDownload(url: string | null) {
     runValidated((target) => {
+      saveLastQrPrintRange(from, to);
+      setLastPrintedRange(loadLastQrPrintRange());
       window.location.href = target;
     }, url);
   }
@@ -148,6 +169,14 @@ export default function QrPrintPage() {
         <p className="text-sm text-stone-600">
           Étiquettes 80 × 70 mm pour imprimante SATO (via driver Windows)
         </p>
+        {lastPrintedRange ? (
+          <p className="text-sm text-stone-500">
+            Dernière plage imprimée :{" "}
+            <span className="font-medium text-stone-700">
+              {formatLastQrPrintRange(lastPrintedRange)}
+            </span>
+          </p>
+        ) : null}
       </header>
 
       <div className="space-y-3 rounded-2xl border border-stone-200 bg-white p-4">

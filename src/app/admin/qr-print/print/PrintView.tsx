@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import { Button } from "@/components/ui/Button";
 import { QrLabelSticker } from "@/components/admin/QrLabelSticker";
 import { buildEntryQrUrl } from "@/lib/qr";
 import { buildLabelIdRange, labelCount } from "@/lib/label-layout";
+import { saveLastQrPrintRange } from "@/lib/qr-print-storage";
 import "./print.css";
 
 const QR_PIXEL_SIZE = 1280;
@@ -76,12 +77,17 @@ export function PrintView({ from, to, baseUrl, correctPrinterOffset, printDescen
     };
   }, [from, to, baseUrl, printDescending]);
 
+  const triggerPrint = useCallback(() => {
+    saveLastQrPrintRange(from, to);
+    window.print();
+  }, [from, to]);
+
   useEffect(() => {
     if (labels.length === 0 || printedRef.current) return;
     printedRef.current = true;
-    const timer = window.setTimeout(() => window.print(), 300);
+    const timer = window.setTimeout(triggerPrint, 300);
     return () => window.clearTimeout(timer);
-  }, [labels]);
+  }, [labels, triggerPrint]);
 
   if (loading) {
     return (
@@ -105,7 +111,7 @@ export function PrintView({ from, to, baseUrl, correctPrinterOffset, printDescen
         <p className="text-stone-700">
           {labels.length} étiquette{labels.length > 1 ? "s" : ""} prêtes.
         </p>
-        <Button type="button" className="max-w-xs" onClick={() => window.print()}>
+        <Button type="button" className="max-w-xs" onClick={triggerPrint}>
           Imprimer
         </Button>
         <p className="max-w-sm text-sm text-stone-500">
