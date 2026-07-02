@@ -17,7 +17,7 @@ export function BottomNav() {
   if (pathname === "/login") return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-stone-200 bg-white/95 backdrop-blur safe-area-pb">
+    <nav className="z-50 w-full shrink-0 border-t border-stone-200 bg-white/95 backdrop-blur safe-area-pb">
       <div className="mx-auto flex max-w-lg items-stretch">
         <Link href="/" className={linkClass(pathname === "/")}>
           <span aria-hidden>🗺️</span>
