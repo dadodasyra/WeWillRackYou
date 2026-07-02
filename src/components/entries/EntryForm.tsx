@@ -330,7 +330,6 @@ export function EntryForm({
         }}
         onBlur={() => handleFieldBlur("ownerId")}
         required={isCreate}
-        defaultToEarlBeiner={isCreate}
         error={isCreate ? fieldErrors.ownerId : undefined}
       />
 
@@ -347,7 +346,7 @@ export function EntryForm({
           error={isCreate ? fieldErrors.position : undefined}
         />
         <p className="text-xs text-stone-500">
-          Format : rangée + niveau + colonne (ex. A01 = rangée A, niveau 0, colonne 1).
+          Format : A01 = rangée A, niveau 0, colonne 1.
         </p>
       </div>
 

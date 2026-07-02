@@ -5,12 +5,17 @@ import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { VarietyColorSwatch } from "@/components/entries/VarietyColorSwatch";
 import { abbreviateVarietyName, formatEntryDetails } from "@/lib/entry-display";
+import {
+  entryMatchesFilters,
+  hasActiveEntryFilters,
+  type EntryFilterCriteria,
+} from "@/lib/entry-filters";
 import type { SerializedEntry } from "@/lib/validations";
 
 type Props = {
   entries: SerializedEntry[];
-  highlightVarietyId?: string;
-  highlightVarietyName?: string;
+  filterCriteria?: EntryFilterCriteria;
+  filterVarietyName?: string;
   selectedEntryId?: number | null;
   activeMoveEntryId?: number | null;
   onEntrySelect?: (entry: SerializedEntry) => void;
@@ -20,16 +25,18 @@ type Props = {
 
 export function sortEntriesForList(
   entries: SerializedEntry[],
-  highlightVarietyId?: string,
+  filterCriteria?: EntryFilterCriteria,
 ): SerializedEntry[] {
+  const filterActive = filterCriteria && hasActiveEntryFilters(filterCriteria);
+
   return [...entries].sort((a, b) => {
     const aUnplaced = a.position ? 1 : 0;
     const bUnplaced = b.position ? 1 : 0;
     if (aUnplaced !== bUnplaced) return aUnplaced - bUnplaced;
 
-    if (highlightVarietyId) {
-      const aMatch = a.bigBagVariety?.id === highlightVarietyId ? 0 : 1;
-      const bMatch = b.bigBagVariety?.id === highlightVarietyId ? 0 : 1;
+    if (filterActive) {
+      const aMatch = entryMatchesFilters(a, filterCriteria) ? 0 : 1;
+      const bMatch = entryMatchesFilters(b, filterCriteria) ? 0 : 1;
       if (aMatch !== bMatch) return aMatch - bMatch;
     }
 
@@ -104,15 +111,16 @@ function TypeCell({ entry }: { entry: SerializedEntry }) {
 
 export function EntryListTable({
   entries,
-  highlightVarietyId,
-  highlightVarietyName,
+  filterCriteria,
+  filterVarietyName,
   selectedEntryId,
   activeMoveEntryId,
   onEntrySelect,
   onMoveRequest,
   onDecommissionRequest,
 }: Props) {
-  const sorted = sortEntriesForList(entries, highlightVarietyId);
+  const sorted = sortEntriesForList(entries, filterCriteria);
+  const filterActive = filterCriteria && hasActiveEntryFilters(filterCriteria);
   const rowRefs = useRef<Map<number, HTMLTableRowElement>>(new Map());
 
   useEffect(() => {
@@ -132,9 +140,13 @@ export function EntryListTable({
     <section className="space-y-2">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-sm font-semibold text-stone-800">Entrées ({sorted.length})</h2>
-        {highlightVarietyId && highlightVarietyName ? (
+        {filterActive ? (
           <span className="rounded-lg bg-emerald-50 px-2 py-1 text-xs text-emerald-800">
-            Tri : {highlightVarietyName} en premier
+            Tri :{" "}
+            {[filterVarietyName, filterCriteria?.year != null ? String(filterCriteria.year) : null]
+              .filter(Boolean)
+              .join(" · ")}{" "}
+            en premier
           </span>
         ) : null}
       </div>
@@ -152,8 +164,8 @@ export function EntryListTable({
           </thead>
           <tbody className="divide-y divide-stone-100">
             {sorted.map((entry) => {
-              const varietyHighlighted =
-                highlightVarietyId && entry.bigBagVariety?.id === highlightVarietyId;
+              const entryHighlighted =
+                filterActive && entryMatchesFilters(entry, filterCriteria);
               const isSelected = selectedEntryId === entry.id;
               return (
                 <tr
@@ -166,7 +178,7 @@ export function EntryListTable({
                   className={`cursor-pointer transition-colors ${
                     isSelected
                       ? "bg-amber-100/80 ring-2 ring-inset ring-amber-400"
-                      : varietyHighlighted
+                      : entryHighlighted
                         ? "bg-emerald-50/60 hover:bg-emerald-50"
                         : !entry.position
                           ? "bg-amber-50/40 hover:bg-amber-50/60"

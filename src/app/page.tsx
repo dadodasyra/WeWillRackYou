@@ -8,7 +8,16 @@ import { DecommissionModal } from "@/components/entries/DecommissionModal";
 import { EntryListTable } from "@/components/entries/EntryListTable";
 import { EntryQuickSummary } from "@/components/entries/EntryDetailCard";
 import { VarietyFilterSelect } from "@/components/entries/VarietyFilterSelect";
+import { YearFilterSelect } from "@/components/entries/YearFilterSelect";
 import { parsePosition } from "@/lib/position";
+import {
+  collectEntryYears,
+  entryMatchesFilters,
+  formatWeightKg,
+  hasActiveEntryFilters,
+  sumEntryWeightKg,
+  type EntryFilterCriteria,
+} from "@/lib/entry-filters";
 import type { SerializedEntry } from "@/lib/validations";
 
 const WarehouseScene = dynamic(
@@ -34,6 +43,7 @@ export default function HomePage() {
   const [selectedSlot, setSelectedSlot] = useState<SlotSelection | null>(null);
   const [selectedEntryId, setSelectedEntryId] = useState<number | null>(null);
   const [varietyFilter, setVarietyFilter] = useState("");
+  const [yearFilter, setYearFilter] = useState("");
   const [varietyNames, setVarietyNames] = useState<Record<string, string>>({});
   const [movingEntry, setMovingEntry] = useState<SerializedEntry | null>(null);
   const [decommissionEntry, setDecommissionEntry] = useState<SerializedEntry | null>(null);
@@ -140,6 +150,25 @@ export default function HomePage() {
     );
   }
 
+  const filterCriteria = useMemo<EntryFilterCriteria>(() => {
+    const criteria: EntryFilterCriteria = {};
+    if (varietyFilter) criteria.varietyId = varietyFilter;
+    if (yearFilter) criteria.year = Number(yearFilter);
+    return criteria;
+  }, [varietyFilter, yearFilter]);
+
+  const availableYears = useMemo(() => collectEntryYears(entries), [entries]);
+
+  const filteredEntries = useMemo(
+    () =>
+      hasActiveEntryFilters(filterCriteria)
+        ? entries.filter((entry) => entryMatchesFilters(entry, filterCriteria))
+        : [],
+    [entries, filterCriteria],
+  );
+
+  const filteredWeightKg = useMemo(() => sumEntryWeightKg(filteredEntries), [filteredEntries]);
+
   const highlightVarietyName = varietyFilter ? varietyNames[varietyFilter] : undefined;
 
   return (
@@ -162,7 +191,31 @@ export default function HomePage() {
         </Link>
       </div>
 
-      <VarietyFilterSelect value={varietyFilter} onChange={setVarietyFilter} />
+      <div className="space-y-1">
+        <div className="flex gap-2">
+          <VarietyFilterSelect
+            className="min-w-0 flex-1 space-y-1"
+            value={varietyFilter}
+            onChange={setVarietyFilter}
+          />
+          <YearFilterSelect
+            className="min-w-0 flex-1 space-y-1"
+            value={yearFilter}
+            years={availableYears}
+            onChange={setYearFilter}
+          />
+        </div>
+        {hasActiveEntryFilters(filterCriteria) ? (
+          <p className="text-xs text-stone-500">
+            Carte : seuls les sacs{" "}
+            {highlightVarietyName ? <strong>{highlightVarietyName}</strong> : null}
+            {highlightVarietyName && filterCriteria.year != null ? " de " : null}
+            {!highlightVarietyName && filterCriteria.year != null ? "de " : null}
+            {filterCriteria.year != null ? <strong>{filterCriteria.year}</strong> : null}{" "}
+            sont mis en évidence. <strong>{formatWeightKg(filteredWeightKg)}</strong>
+          </p>
+        ) : null}
+      </div>
 
       {movingEntry ? (
         <div className="flex items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
@@ -189,6 +242,7 @@ export default function HomePage() {
           occupiedMap={occupiedMap}
           selectedPosition={selectedSlot?.position ?? null}
           highlightVarietyId={varietyFilter || null}
+          highlightYear={yearFilter ? Number(yearFilter) : null}
           onSlotSelect={handleSlotSelect}
         />
       </Suspense>
@@ -262,8 +316,8 @@ export default function HomePage() {
 
       <EntryListTable
         entries={entries}
-        highlightVarietyId={varietyFilter || undefined}
-        highlightVarietyName={highlightVarietyName}
+        filterCriteria={filterCriteria}
+        filterVarietyName={highlightVarietyName}
         selectedEntryId={selectedEntryId}
         activeMoveEntryId={movingEntry?.id ?? null}
         onEntrySelect={handleEntrySelect}

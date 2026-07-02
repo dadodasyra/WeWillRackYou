@@ -7,9 +7,10 @@ import type { SerializedBigBagVariety } from "@/lib/validations";
 type Props = {
   value: string;
   onChange: (value: string) => void;
+  className?: string;
 };
 
-export function VarietyFilterSelect({ value, onChange }: Props) {
+export function VarietyFilterSelect({ value, onChange, className }: Props) {
   const [varieties, setVarieties] = useState<SerializedBigBagVariety[]>([]);
 
   const load = useCallback(async () => {
@@ -24,7 +25,7 @@ export function VarietyFilterSelect({ value, onChange }: Props) {
   const selected = varieties.find((v) => v.id === value);
 
   return (
-    <label className="block space-y-1">
+    <label className={className ?? "block space-y-1"}>
       <span className="text-sm font-medium text-stone-700">Filtrer par variété</span>
       <div className="relative">
         <select
@@ -45,11 +46,6 @@ export function VarietyFilterSelect({ value, onChange }: Props) {
           </span>
         ) : null}
       </div>
-      {selected ? (
-        <p className="text-xs text-stone-500">
-          Carte : seuls les sacs <strong>{selected.name}</strong> sont mis en évidence.
-        </p>
-      ) : null}
     </label>
   );
 }

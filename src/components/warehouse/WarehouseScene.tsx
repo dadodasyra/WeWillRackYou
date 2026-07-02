@@ -23,6 +23,7 @@ import {
   SLOT_SIZE,
 } from "@/lib/warehouse-layout";
 import { formatPosition } from "@/lib/position";
+import { entryMatchesFilters } from "@/lib/entry-filters";
 import { getStripedVarietyTexture, getVarietyEmissive } from "@/lib/variety-color";
 import type { SerializedEntry } from "@/lib/validations";
 
@@ -37,6 +38,7 @@ type Props = {
   visibleLevels?: number[];
   selectedPosition?: string | null;
   highlightVarietyId?: string | null;
+  highlightYear?: number | null;
   onSlotSelect: (selection: SlotSelection) => void;
   compact?: boolean;
 };
@@ -63,6 +65,7 @@ function Slot({
   entry,
   selected,
   highlightVarietyId,
+  highlightYear,
   onSelect,
 }: {
   positionCode: string;
@@ -70,6 +73,7 @@ function Slot({
   entry?: SerializedEntry;
   selected: boolean;
   highlightVarietyId?: string | null;
+  highlightYear?: number | null;
   onSelect: () => void;
 }) {
   const materialRef = useRef<THREE.MeshStandardMaterial>(null);
@@ -77,16 +81,21 @@ function Slot({
   const variety = entry?.bigBagVariety ?? null;
   const colors = LEVEL_COLORS[level] ?? LEVEL_COLORS[0];
 
-  const filterActive = Boolean(highlightVarietyId);
+  const filterActive = Boolean(highlightVarietyId || highlightYear != null);
   const slotMatchesFilter =
-    filterActive && occupied && variety?.id === highlightVarietyId;
-  const isDimmedEmpty = filterActive && !occupied && !selected;
-  const isDimmedOccupied = filterActive && occupied && !slotMatchesFilter && !selected;
+    occupied &&
+    entry != null &&
+    entryMatchesFilters(entry, {
+      varietyId: highlightVarietyId ?? undefined,
+      year: highlightYear ?? undefined,
+    });
+  const showOccupied = occupied && (!filterActive || slotMatchesFilter || selected);
+  const isDimmed = filterActive && !selected && !showOccupied;
 
   const stripeTexture = useMemo(() => {
-    if (selected || !variety?.isBarred || isDimmedEmpty || isDimmedOccupied) return null;
+    if (selected || !variety?.isBarred || isDimmed || !showOccupied) return null;
     return getStripedVarietyTexture(variety.color, true);
-  }, [variety, isDimmedEmpty, isDimmedOccupied, selected]);
+  }, [variety, isDimmed, showOccupied, selected]);
 
   const useStripeMap = !!stripeTexture && !selected;
 
@@ -105,29 +114,22 @@ function Slot({
     level,
   );
 
-  let color = occupied ? colors.occupied : colors.empty;
-  let emissive = occupied ? "#14532d" : "#000000";
-  let emissiveIntensity = occupied ? 0.15 : 0;
-  let opacity = occupied || selected ? 1 : 0.9;
+  let color = showOccupied ? colors.occupied : colors.empty;
+  let emissive = showOccupied ? "#14532d" : "#000000";
+  let emissiveIntensity = showOccupied ? 0.15 : 0;
+  let opacity = showOccupied || selected ? 1 : 0.9;
 
-  if (occupied && variety && !isDimmedEmpty && !isDimmedOccupied && !useStripeMap) {
+  if (showOccupied && variety && !isDimmed && !useStripeMap) {
     color = variety.color;
     emissive = getVarietyEmissive(variety.color);
     emissiveIntensity = 0.25;
   }
 
-  if (isDimmedEmpty) {
+  if (isDimmed) {
     color = colors.empty;
     emissive = "#000000";
     emissiveIntensity = 0;
     opacity = 0.1;
-  }
-
-  if (isDimmedOccupied) {
-    color = "#a8a29e";
-    emissive = "#000000";
-    emissiveIntensity = 0;
-    opacity = 0.65;
   }
 
   if (useStripeMap) {
@@ -144,7 +146,7 @@ function Slot({
   }
 
   return (
-    <mesh position={[x, y, z]} renderOrder={selected ? 2 : isDimmedOccupied ? -1 : 0}>
+    <mesh position={[x, y, z]} renderOrder={selected ? 2 : isDimmed ? -1 : 0}>
       <boxGeometry args={[SLOT_SIZE, SLOT_SIZE, SLOT_SIZE]} />
       <meshStandardMaterial
         ref={materialRef}
@@ -400,6 +402,7 @@ function WarehouseGrid({
   visibleLevels,
   selectedPosition,
   highlightVarietyId,
+  highlightYear,
   onSlotSelect,
 }: Props) {
   const visibleSet = useMemo(() => new Set(visibleLevels), [visibleLevels]);
@@ -421,6 +424,7 @@ function WarehouseGrid({
           entry={entry}
           selected={selectedPosition === position}
           highlightVarietyId={highlightVarietyId}
+          highlightYear={highlightYear}
           onSelect={() =>
             onSlotSelect({
               position,
@@ -432,7 +436,7 @@ function WarehouseGrid({
       );
     }
     return items;
-  }, [occupiedMap, onSlotSelect, visibleSet, selectedPosition, highlightVarietyId]);
+  }, [occupiedMap, onSlotSelect, visibleSet, selectedPosition, highlightVarietyId, highlightYear]);
 
   return (
     <>
@@ -504,6 +508,7 @@ export function WarehouseScene({
   visibleLevels = [0, 1, 2],
   selectedPosition,
   highlightVarietyId = null,
+  highlightYear = null,
   onSlotSelect,
   compact,
 }: Props) {
@@ -529,6 +534,7 @@ export function WarehouseScene({
           visibleLevels={visibleLevels}
           selectedPosition={selectedPosition}
           highlightVarietyId={highlightVarietyId}
+          highlightYear={highlightYear}
           onSlotSelect={onSlotSelect}
           compact={compact}
         />

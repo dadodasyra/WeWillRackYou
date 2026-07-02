@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { DEFAULT_OWNER_NAME } from "@/lib/owners";
 import type { SerializedOwner } from "@/lib/validations";
 import { Select } from "@/components/ui/Select";
+
+const DEFAULT_OWNER_NAME = "EARL Beiner";
 
 type Props = {
   label: string;
@@ -12,8 +13,6 @@ type Props = {
   required?: boolean;
   error?: string;
   onBlur?: () => void;
-  /** Présélectionner EARL Beiner à la création si aucune valeur. */
-  defaultToEarlBeiner?: boolean;
 };
 
 export function OwnerSelect({
@@ -23,7 +22,6 @@ export function OwnerSelect({
   required,
   error,
   onBlur,
-  defaultToEarlBeiner,
 }: Props) {
   const [owners, setOwners] = useState<SerializedOwner[]>([]);
 
@@ -36,25 +34,40 @@ export function OwnerSelect({
     load();
   }, [load]);
 
+  const defaultOwnerId =
+    owners.find((o) => o.name === DEFAULT_OWNER_NAME)?.id ?? owners[0]?.id ?? "";
+
   useEffect(() => {
-    if (!defaultToEarlBeiner || value || owners.length === 0) return;
-    const defaultOwner = owners.find((o) => o.name === DEFAULT_OWNER_NAME);
-    if (defaultOwner) onChange(defaultOwner.id);
-  }, [defaultToEarlBeiner, value, owners, onChange]);
+    if (!defaultOwnerId || value) return;
+    onChange(defaultOwnerId);
+  }, [defaultOwnerId, value, onChange]);
 
   const options = owners.map((owner) => ({
     value: owner.id,
     label: owner.name,
   }));
 
+  if (owners.length === 0) {
+    return (
+      <label className="block space-y-1">
+        <span className="text-sm font-medium text-stone-700">
+          {required ? `${label} *` : label}
+        </span>
+        <div className="w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-3 text-base text-stone-500">
+          Chargement…
+        </div>
+      </label>
+    );
+  }
+
   return (
     <Select
       label={required ? `${label} *` : label}
-      value={value}
+      value={value || defaultOwnerId}
       onChange={(e) => onChange(e.target.value)}
       onBlur={onBlur}
       error={error}
-      options={[{ value: "", label: "- Sélectionner -" }, ...options]}
+      options={options}
       required={required}
     />
   );
