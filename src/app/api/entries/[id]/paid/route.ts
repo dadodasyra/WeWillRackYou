@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { serializeEntry, entryInclude } from "@/lib/entries";
-import { getSessionUser, jsonError, unauthorized } from "@/lib/api";
+import { forbidden, getSessionUser, jsonError, unauthorized } from "@/lib/api";
 import { z } from "zod";
 
 type Params = { params: Promise<{ id: string }> };
@@ -11,11 +11,12 @@ const paidSchema = z.object({ isPaid: z.boolean() });
 export async function PATCH(request: NextRequest, { params }: Params) {
   const user = await getSessionUser();
   if (!user) return unauthorized();
+  if (user.role !== "ADMIN") return forbidden();
 
   const id = Number((await params).id);
   const existing = await prisma.entry.findUnique({ where: { id } });
   if (!existing) return jsonError("Entrée introuvable", 404);
-  if (!existing.decommissionForKikiriki) {
+  if (existing.decommissionReason !== "KIKIRIKI") {
     return jsonError("Cette entrée n'est pas dans la liste de paiement");
   }
 

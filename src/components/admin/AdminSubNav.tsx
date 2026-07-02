@@ -7,7 +7,6 @@ const ADMIN_TABS = [
   { href: "/admin/users", label: "Utilisateurs" },
   { href: "/admin/varieties", label: "Variétés" },
   { href: "/admin/owners", label: "Propriétaires" },
-  { href: "/admin/archives", label: "Archives" },
   { href: "/admin/qr-print", label: "QR Codes" },
 ] as const;
 

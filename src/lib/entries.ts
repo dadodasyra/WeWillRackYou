@@ -1,6 +1,11 @@
 import { BigBagVariety, Entry, Owner, User } from "@prisma/client";
 import { formatPosition, parsePosition } from "./position";
-import type { SerializedBigBagVariety, SerializedEntry, SerializedOwner } from "./validations";
+import type {
+  DecommissionReason,
+  SerializedBigBagVariety,
+  SerializedEntry,
+  SerializedOwner,
+} from "./validations";
 
 type EntryWithUsers = Entry & {
   createdBy: Pick<User, "username">;
@@ -9,18 +14,34 @@ type EntryWithUsers = Entry & {
   owner: Pick<Owner, "id" | "name">;
 };
 
-/** Entrées visibles dans l’admin Archives (décommissionnées, hors kikiriki). */
-export const archiveEntryWhere = {
-  status: "DECOMMISSIONED" as const,
-  decommissionForKikiriki: false,
-};
-
-export function isArchiveEntry(entry: {
-  status: string;
-  decommissionForKikiriki: boolean;
-}): boolean {
-  return entry.status === "DECOMMISSIONED" && !entry.decommissionForKikiriki;
+export function decommissionedWhere(reason: DecommissionReason) {
+  return {
+    status: "DECOMMISSIONED" as const,
+    decommissionReason: reason,
+  };
 }
+
+export function isRestorableDecommission(entry: {
+  status: string;
+  decommissionReason: DecommissionReason | null;
+}): boolean {
+  return (
+    entry.status === "DECOMMISSIONED" &&
+    (entry.decommissionReason === "GENERAL" || entry.decommissionReason === "OIL_PRESSING")
+  );
+}
+
+export function isKikirikiEntry(entry: {
+  decommissionReason: DecommissionReason | null;
+}): boolean {
+  return entry.decommissionReason === "KIKIRIKI";
+}
+
+export const DECOMMISSION_REASON_LABELS: Record<DecommissionReason, string> = {
+  KIKIRIKI: "Ferme du kikiriki",
+  OIL_PRESSING: "Pressage d'huile",
+  GENERAL: "Décommissionné",
+};
 
 export const entryInclude = {
   createdBy: { select: { username: true } },
@@ -73,7 +94,7 @@ export function serializeEntry(entry: EntryWithUsers): SerializedEntry {
     humidity: entry.humidity,
     description: entry.description,
     status: entry.status,
-    decommissionForKikiriki: entry.decommissionForKikiriki,
+    decommissionReason: entry.decommissionReason,
     isPaid: entry.isPaid,
     decommissionedAt: entry.decommissionedAt?.toISOString() ?? null,
     createdAt: entry.createdAt.toISOString(),

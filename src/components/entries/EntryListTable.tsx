@@ -1,7 +1,6 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { VarietyColorSwatch } from "@/components/entries/VarietyColorSwatch";
 import { abbreviateVarietyName, formatEntryDetails } from "@/lib/entry-display";
@@ -121,12 +120,6 @@ export function EntryListTable({
 }: Props) {
   const sorted = sortEntriesForList(entries, filterCriteria);
   const filterActive = filterCriteria && hasActiveEntryFilters(filterCriteria);
-  const rowRefs = useRef<Map<number, HTMLTableRowElement>>(new Map());
-
-  useEffect(() => {
-    if (selectedEntryId == null) return;
-    rowRefs.current.get(selectedEntryId)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  }, [selectedEntryId]);
 
   if (sorted.length === 0) {
     return (
@@ -170,10 +163,6 @@ export function EntryListTable({
               return (
                 <tr
                   key={entry.id}
-                  ref={(el) => {
-                    if (el) rowRefs.current.set(entry.id, el);
-                    else rowRefs.current.delete(entry.id);
-                  }}
                   onClick={() => onEntrySelect?.(entry)}
                   className={`cursor-pointer transition-colors ${
                     isSelected

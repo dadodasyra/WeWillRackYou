@@ -6,7 +6,7 @@ import {
   serializeEntry,
   positionToDb,
   entryInclude,
-  isArchiveEntry,
+  isRestorableDecommission,
 } from "@/lib/entries";
 import { forbidden, getSessionUser, jsonError, unauthorized } from "@/lib/api";
 import { updateEntrySchema } from "@/lib/validations";
@@ -143,8 +143,8 @@ export async function DELETE(_request: NextRequest, { params }: Params) {
   if (!existing) {
     return jsonError("Entrée introuvable", 404);
   }
-  if (!isArchiveEntry(existing)) {
-    return jsonError("Seules les entrées archivées peuvent être supprimées définitivement");
+  if (!isRestorableDecommission(existing)) {
+    return jsonError("Seules les entrées décommissionnées (huile ou général) peuvent être supprimées définitivement");
   }
 
   await prisma.entry.delete({ where: { id } });

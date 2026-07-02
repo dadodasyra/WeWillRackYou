@@ -22,6 +22,12 @@ enum EntryStatus {
   DECOMMISSIONED
 }
 
+enum DecommissionReason {
+  KIKIRIKI
+  OIL_PRESSING
+  GENERAL
+}
+
 model User {
   id           String   @id @default(cuid())
   username     String   @unique
@@ -69,9 +75,9 @@ model Entry {
   weight                   Float?
   humidity                 Float?
   description              String?     @db.Text
-  status                   EntryStatus @default(ACTIVE)
-  decommissionForKikiriki  Boolean     @default(false)
-  isPaid                   Boolean     @default(false)
+  status                   EntryStatus          @default(ACTIVE)
+  decommissionReason       DecommissionReason?
+  isPaid                   Boolean              @default(false)
   decommissionedAt         DateTime?
   createdAt                DateTime    @default(now())
   updatedAt                DateTime    @updatedAt
@@ -85,7 +91,7 @@ model Entry {
   owner            Owner          @relation(fields: [ownerId], references: [id])
 
   @@index([status])
-  @@index([decommissionForKikiriki, decommissionedAt])
+  @@index([decommissionReason, decommissionedAt])
   @@index([locationRow, locationLevel, locationColumn])
   @@index([bigBagVarietyId])
   @@index([ownerId])

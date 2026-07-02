@@ -1,6 +1,6 @@
 # WeWillRackYou
 
-Application web mobile-first de gestion d'inventaire pour PME agricole (entrepôt, sacs, QR codes, paiements Ferme du kikiriki).
+Application web mobile-first de gestion d'inventaire pour PME agricole (entrepôt, sacs, QR codes, décommissionnés).
 
 A cursor vibecoded app, again..
 
@@ -113,8 +113,8 @@ Puis : `pm2 start ecosystem.config.cjs`
 - Carte 3D de l'entrepôt (8 rangées × 9 colonnes × 4 niveaux)
 - Entrées à ID incrémental avec QR codes (`/entree/{id}`)
 - Gros sacs (céréale, poids, humidité) ou autres objets
-- Décommission avec liste de paiement « Ferme du kikiriki »
-- Administration des utilisateurs et archives
+- Décommission avec trois catégories : Ferme du kikiriki, pressage d'huile, archivage général
+- Administration des utilisateurs, variétés et propriétaires
 
 ## Déploiement VPS (production)
 

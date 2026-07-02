@@ -27,7 +27,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     where: { id },
     data: {
       status: "DECOMMISSIONED",
-      decommissionForKikiriki: parsed.data.forKikiriki,
+      decommissionReason: parsed.data.reason,
       decommissionedAt: new Date(),
       isPaid: false,
       locationRow: null,

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { serializeEntry, entryInclude, isArchiveEntry } from "@/lib/entries";
+import { serializeEntry, entryInclude, isRestorableDecommission } from "@/lib/entries";
 import { forbidden, getSessionUser, jsonError, unauthorized } from "@/lib/api";
 
 type Params = { params: Promise<{ id: string }> };
@@ -17,15 +17,15 @@ export async function POST(_request: NextRequest, { params }: Params) {
 
   const existing = await prisma.entry.findUnique({ where: { id } });
   if (!existing) return jsonError("Entrée introuvable", 404);
-  if (!isArchiveEntry(existing)) {
-    return jsonError("Seules les entrées archivées peuvent être remises en entrepôt");
+  if (!isRestorableDecommission(existing)) {
+    return jsonError("Seules les entrées décommissionnées (huile ou général) peuvent être remises en entrepôt");
   }
 
   const entry = await prisma.entry.update({
     where: { id },
     data: {
       status: "ACTIVE",
-      decommissionForKikiriki: false,
+      decommissionReason: null,
       decommissionedAt: null,
       isPaid: false,
       lastModifiedById: user.id,

@@ -10,6 +10,8 @@ type Props = {
   entries: SerializedEntry[];
   selectedEntryId?: number | null;
   onEntrySelect: (entry: SerializedEntry) => void;
+  title?: string;
+  emptyMessage?: string;
 };
 
 function TypeCell({ entry }: { entry: SerializedEntry }) {
@@ -32,7 +34,13 @@ function TypeCell({ entry }: { entry: SerializedEntry }) {
   );
 }
 
-export function ArchiveEntryList({ entries, selectedEntryId, onEntrySelect }: Props) {
+export function ArchiveEntryList({
+  entries,
+  selectedEntryId,
+  onEntrySelect,
+  title = "Archives",
+  emptyMessage = "Aucune entrée.",
+}: Props) {
   const sorted = sortEntriesForList(entries);
   const rowRefs = useRef<Map<number, HTMLTableRowElement>>(new Map());
 
@@ -43,13 +51,13 @@ export function ArchiveEntryList({ entries, selectedEntryId, onEntrySelect }: Pr
 
   if (sorted.length === 0) {
     return (
-      <p className="rounded-xl bg-stone-50 px-3 py-4 text-sm text-stone-600">Aucune archive.</p>
+      <p className="rounded-xl bg-stone-50 px-3 py-4 text-sm text-stone-600">{emptyMessage}</p>
     );
   }
 
   return (
     <section className="space-y-2">
-      <h2 className="text-sm font-semibold text-stone-800">Archives ({sorted.length})</h2>
+      <h2 className="text-sm font-semibold text-stone-800">{title} ({sorted.length})</h2>
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
         <table className="w-full table-fixed text-left text-sm">

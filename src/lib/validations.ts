@@ -124,8 +124,12 @@ export const moveEntrySchema = z.object({
   position: z.string().nullable(),
 });
 
+export const decommissionReasonSchema = z.enum(["KIKIRIKI", "OIL_PRESSING", "GENERAL"]);
+
+export type DecommissionReason = z.infer<typeof decommissionReasonSchema>;
+
 export const decommissionEntrySchema = z.object({
-  forKikiriki: z.boolean(),
+  reason: decommissionReasonSchema,
 });
 
 export const createUserSchema = z.object({
@@ -151,7 +155,7 @@ export type SerializedEntry = {
   humidity: number | null;
   description: string | null;
   status: "ACTIVE" | "DECOMMISSIONED";
-  decommissionForKikiriki: boolean;
+  decommissionReason: "KIKIRIKI" | "OIL_PRESSING" | "GENERAL" | null;
   isPaid: boolean;
   decommissionedAt: string | null;
   createdAt: string;

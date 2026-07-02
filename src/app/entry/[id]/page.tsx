@@ -10,6 +10,7 @@ import { DecommissionModal } from "@/components/entries/DecommissionModal";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import type { SerializedEntry } from "@/lib/validations";
+import { DECOMMISSION_REASON_LABELS } from "@/lib/entries";
 
 const WarehouseScene = dynamic(
   () => import("@/components/warehouse/WarehouseScene").then((m) => m.WarehouseScene),
@@ -140,7 +141,10 @@ function EntryPageContent() {
       {entry.status === "DECOMMISSIONED" ? (
         <p className="rounded-xl bg-stone-100 px-3 py-2 text-sm text-stone-700">
           Cette entrée est archivée
-          {entry.decommissionForKikiriki ? " (liste de paiement kikiriki)" : ""}.
+          {entry.decommissionReason
+            ? ` (${DECOMMISSION_REASON_LABELS[entry.decommissionReason]})`
+            : ""}
+          .
         </p>
       ) : null}
 

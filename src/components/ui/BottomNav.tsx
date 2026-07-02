@@ -23,9 +23,9 @@ export function BottomNav() {
           <span aria-hidden>🗺️</span>
           Carte
         </Link>
-        <Link href="/payments" className={linkClass(pathname === "/payments")}>
-          <span aria-hidden>💶</span>
-          Paiements
+        <Link href="/decommissioned" className={linkClass(pathname === "/decommissioned")}>
+          <span aria-hidden>📦</span>
+          Sorties
         </Link>
         {isAdmin && (
           <Link
