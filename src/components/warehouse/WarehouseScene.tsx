@@ -478,30 +478,43 @@ function WarehouseGrid({
 
 export function LevelLegend({
   visibleLevels,
-  onToggle,
+  onSelect,
 }: {
   visibleLevels: number[];
-  onToggle: (level: number) => void;
+  onSelect: (level: number) => void;
 }) {
+  const showingAll = visibleLevels.length === WAREHOUSE.levels.length;
+
   return (
     <div className="flex flex-wrap gap-2">
       {WAREHOUSE.levels.map((level) => {
-        const active = visibleLevels.includes(level);
+        const visible = visibleLevels.includes(level);
+        const isolated = !showingAll && visible;
         const color = LEVEL_COLORS[level]?.occupied ?? "#15803d";
         return (
           <button
             key={level}
             type="button"
-            onClick={() => onToggle(level)}
+            onClick={() => onSelect(level)}
+            aria-pressed={visible}
+            title={
+              showingAll
+                ? `Afficher uniquement le niveau ${level}`
+                : isolated
+                  ? `Réafficher les 3 niveaux`
+                  : `Afficher uniquement le niveau ${level}`
+            }
             className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition ${
-              active
-                ? "bg-white border border-stone-300 text-stone-800 shadow-sm"
-                : "bg-stone-100 text-stone-400 line-through"
+              visible
+                ? isolated
+                  ? "bg-white border-2 border-stone-400 text-stone-900 shadow-sm ring-1 ring-stone-200"
+                  : "bg-white border border-stone-300 text-stone-800 shadow-sm"
+                : "bg-stone-100 text-stone-400"
             }`}
           >
             <span
               className="inline-block h-3 w-3 rounded-sm"
-              style={{ backgroundColor: active ? color : "#d6d3d1" }}
+              style={{ backgroundColor: visible ? color : "#d6d3d1" }}
             />
             Niv. {level}
           </button>

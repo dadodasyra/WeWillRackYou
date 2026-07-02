@@ -79,13 +79,15 @@ export default function HomePage() {
     return map;
   }, [entries]);
 
-  function toggleLevel(level: number) {
+  const ALL_LEVELS = [0, 1, 2];
+
+  function selectLevel(level: number) {
     setVisibleLevels((current) => {
-      if (current.includes(level)) {
-        const next = current.filter((l) => l !== level);
-        return next.length === 0 ? current : next;
-      }
-      return [...current, level].sort();
+      const showingAll = current.length === ALL_LEVELS.length;
+      const showingOnly = current.length === 1 && current[0] === level;
+      if (showingAll) return [level];
+      if (showingOnly) return ALL_LEVELS;
+      return [level];
     });
   }
 
@@ -179,7 +181,7 @@ export default function HomePage() {
 
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <LevelLegend visibleLevels={visibleLevels} onToggle={toggleLevel} />
+          <LevelLegend visibleLevels={visibleLevels} onSelect={selectLevel} />
         </div>
         <Link
           href="/entry/new"
