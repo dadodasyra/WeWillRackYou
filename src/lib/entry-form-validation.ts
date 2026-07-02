@@ -51,10 +51,10 @@ export function validateOwnerId(value: string, required: boolean): string | null
   return null;
 }
 
-export function validateYear(value: string, required: boolean): string | null {
+export function validateYear(value: string): string | null {
   const trimmed = value.trim();
   if (!trimmed) {
-    return required ? "L'année est obligatoire" : null;
+    return null;
   }
   const year = Number(trimmed);
   if (!Number.isInteger(year) || year < YEAR_MIN || year > YEAR_MAX) {
