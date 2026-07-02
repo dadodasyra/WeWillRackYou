@@ -3,6 +3,7 @@ import QRCode from "qrcode";
 import sharp from "sharp";
 import {
   getLabelContentLayout,
+  ID_TEXT_MM,
   LABEL_HEIGHT_MM,
   LABEL_WIDTH_MM,
   labelHeightPx,
@@ -27,8 +28,8 @@ async function renderLabelRaster(id: number, baseUrl: string): Promise<Buffer> {
   const qrLeftPx = mmToPx(layout.qrLeftMm);
   const qrTopPx = mmToPx(layout.qrTopMm);
   const idText = String(id);
-  const idFontPx = mmToPx(4.5);
-  const idY = heightPx - mmToPx(layout.idBaselineMm + 1);
+  const idFontPx = mmToPx(ID_TEXT_MM);
+  const idY = heightPx - mmToPx(layout.idBaselineMm);
 
   const qrPng = await QRCode.toBuffer(url, {
     type: "png",

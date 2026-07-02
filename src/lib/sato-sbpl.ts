@@ -1,5 +1,10 @@
 import { buildEntryQrUrl } from "@/lib/qr";
-import { DOTS_PER_MM, LABEL_HEIGHT_MM, LABEL_WIDTH_MM } from "@/lib/label-layout";
+import {
+  DOTS_PER_MM,
+  idTextSbplScale,
+  LABEL_HEIGHT_MM,
+  LABEL_WIDTH_MM,
+} from "@/lib/label-layout";
 
 const ESC = "\x1B";
 
@@ -37,7 +42,7 @@ function generateLabel(id: number, baseUrl: string): string {
     `${ESC}AL8`,
     `${ESC}H${padH(H_CENTER)}`,
     `${ESC}V${padV(TEXT_V)}`,
-    `${ESC}RH0,SATOSANS.ttf,0,100,100,${idText}`,
+    `${ESC}RH0,SATOSANS.ttf,0,${idTextSbplScale()},${idTextSbplScale()},${idText}`,
     `${ESC}Q000001`,
     `${ESC}Z`,
   ].join("\r\n");

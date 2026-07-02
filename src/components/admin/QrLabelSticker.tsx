@@ -1,4 +1,4 @@
-import { PRINTER_OFFSET_CORRECTION_MM } from "@/lib/label-layout";
+import { ID_TEXT_MM, PRINTER_OFFSET_CORRECTION_MM } from "@/lib/label-layout";
 
 type Props = {
   id: number;
@@ -19,7 +19,9 @@ export function QrLabelSticker({ id, dataUrl, correctPrinterOffset = false }: Pr
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={dataUrl} alt={`QR code ${id}`} className="print-label-qr" />
-        <p className="print-label-id">{id}</p>
+        <p className="print-label-id" style={{ fontSize: `${ID_TEXT_MM}mm` }}>
+          {id}
+        </p>
       </div>
     </div>
   );

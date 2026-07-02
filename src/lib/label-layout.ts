@@ -7,7 +7,12 @@ export const LABEL_MARGIN_BOTTOM_MM = 6;
 export const LABEL_MARGIN_SIDE_MM = 0;
 export const LABEL_ID_GAP_MM = 2;
 export const QR_SIZE_MM = 52;
-export const ID_TEXT_MM = 6;
+/** Entry ID font size (em height). Was ~4.5 mm; enlarged ~2.5× for legibility. */
+export const ID_TEXT_MM = 11.25;
+/** Approximate cap height ratio for Arial bold digits (baseline layout). */
+const ID_TEXT_CAP_RATIO = 0.72;
+/** SBPL SATOSANS scale at the previous 4.5 mm size. */
+export const ID_TEXT_SBPL_BASE_SCALE = 100;
 
 /** Shift content left to compensate SATO driver horizontal offset. */
 export const PRINTER_OFFSET_CORRECTION_MM = 6;
@@ -21,9 +26,15 @@ export type LabelContentLayout = {
 export function getLabelContentLayout(): LabelContentLayout {
   const qrLeftMm = (LABEL_WIDTH_MM - QR_SIZE_MM) / 2;
   const qrTopMm = LABEL_MARGIN_TOP_MM;
-  const idBaselineMm = LABEL_MARGIN_BOTTOM_MM;
+  const idTopMm = qrTopMm + QR_SIZE_MM + LABEL_ID_GAP_MM;
+  const idBaselineFromTopMm = idTopMm + ID_TEXT_MM * ID_TEXT_CAP_RATIO;
+  const idBaselineMm = LABEL_HEIGHT_MM - idBaselineFromTopMm;
 
   return { qrLeftMm, qrTopMm, idBaselineMm };
+}
+
+export function idTextSbplScale(): number {
+  return Math.round((ID_TEXT_MM / 4.5) * ID_TEXT_SBPL_BASE_SCALE);
 }
 
 export function parseLabelRange(
