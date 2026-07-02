@@ -61,6 +61,7 @@ export function EntryForm({
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [duplicateEntryId, setDuplicateEntryId] = useState<number | null>(null);
+  const [occupiedPositionEntryId, setOccupiedPositionEntryId] = useState<number | null>(null);
   const [fieldErrors, setFieldErrors] = useState<EntryFormFieldErrors>({});
   const [showMap, setShowMap] = useState(false);
   const [entries, setEntries] = useState<SerializedEntry[]>([]);
@@ -183,6 +184,38 @@ export function EntryForm({
     }
   }, [manualId, requireManualId, initial, setFieldError]);
 
+  const checkOccupiedPosition = useCallback(async () => {
+    if (!isCreate) return;
+
+    const formatError = validatePosition(position);
+    if (formatError) {
+      setOccupiedPositionEntryId(null);
+      setFieldError("position", formatError);
+      return;
+    }
+
+    const trimmed = position.trim();
+    if (!trimmed) {
+      setOccupiedPositionEntryId(null);
+      setFieldError("position", null);
+      return;
+    }
+
+    setFieldError("position", null);
+
+    const response = await fetch("/api/entries?status=ACTIVE");
+    if (!response.ok) return;
+
+    const activeEntries = (await response.json()) as SerializedEntry[];
+    const occupant = activeEntries.find((entry) => entry.position === trimmed);
+
+    if (occupant) {
+      setOccupiedPositionEntryId(occupant.id);
+    } else {
+      setOccupiedPositionEntryId(null);
+    }
+  }, [position, isCreate, setFieldError]);
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setLoading(true);
@@ -221,7 +254,7 @@ export function EntryForm({
       const descriptionError = validateDescription(description);
       if (descriptionError) errors.description = descriptionError;
 
-      if (hasEntryFormFieldErrors(errors) || duplicateEntryId != null) {
+      if (hasEntryFormFieldErrors(errors) || duplicateEntryId != null || occupiedPositionEntryId != null) {
         setFieldErrors(errors);
         setError("Corrigez les champs en rouge avant de continuer.");
         setLoading(false);
@@ -337,18 +370,32 @@ export function EntryForm({
         error={isCreate ? fieldErrors.ownerId : undefined}
       />
 
-      <div className="space-y-1">
+      <div className="space-y-2">
         <Input
           label="Emplacement"
           value={position}
           onChange={(e) => {
             setPosition(e.target.value.toUpperCase());
+            setOccupiedPositionEntryId(null);
             if (isCreate) clearFieldError("position");
           }}
-          onBlur={() => handleFieldBlur("position")}
+          onBlur={checkOccupiedPosition}
           placeholder="Ex. A01, B15"
-          error={isCreate ? fieldErrors.position : undefined}
+          error={
+            isCreate
+              ? (fieldErrors.position ??
+                (occupiedPositionEntryId ? "Cet emplacement est déjà occupé" : undefined))
+              : undefined
+          }
         />
+        {occupiedPositionEntryId ? (
+          <Link
+            href={`/entry/${occupiedPositionEntryId}?edit=1`}
+            className="block w-full rounded-xl bg-emerald-700 px-4 py-3 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800"
+          >
+            Voir l&apos;entrée existante
+          </Link>
+        ) : null}
         <p className="text-xs text-stone-500">
           Format : A01 = rangée A, niveau 0, colonne 1.
         </p>
@@ -366,6 +413,7 @@ export function EntryForm({
           onSlotSelect={({ position: pos, entry }) => {
             if (!entry) {
               setPosition(pos);
+              setOccupiedPositionEntryId(null);
               if (isCreate) clearFieldError("position");
             }
           }}
@@ -453,6 +501,7 @@ export function EntryForm({
           disabled={
             loading ||
             duplicateEntryId != null ||
+            occupiedPositionEntryId != null ||
             (isCreate && hasEntryFormFieldErrors(fieldErrors))
           }
         >
