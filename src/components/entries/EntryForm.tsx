@@ -50,7 +50,11 @@ export function EntryForm({
   const [position, setPosition] = useState(initial?.position ?? "");
   const [bigBagVarietyId, setBigBagVarietyId] = useState(initial?.bigBagVariety?.id ?? "");
   const [ownerId, setOwnerId] = useState(initial?.owner?.id ?? "");
-  const [year, setYear] = useState(initial?.year?.toString() ?? "");
+  const [year, setYear] = useState(
+    initial != null
+      ? (initial.year?.toString() ?? "")
+      : String(new Date().getFullYear()),
+  );
   const [weight, setWeight] = useState(initial?.weight?.toString() ?? "");
   const [humidity, setHumidity] = useState(initial?.humidity?.toString() ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
