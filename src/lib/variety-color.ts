@@ -54,7 +54,21 @@ export function varietySwatchStyle({
   };
 }
 
-const textureCache = new Map<string, THREE.CanvasTexture>();
+const textureCacheByContext = new WeakMap<
+  WebGLRenderingContext,
+  Map<string, THREE.CanvasTexture>
+>();
+
+function getContextTextureCache(
+  gl: WebGLRenderingContext,
+): Map<string, THREE.CanvasTexture> {
+  let cache = textureCacheByContext.get(gl);
+  if (!cache) {
+    cache = new Map();
+    textureCacheByContext.set(gl, cache);
+  }
+  return cache;
+}
 
 function createCanvasTexture(canvas: HTMLCanvasElement): THREE.CanvasTexture {
   const texture = new THREE.CanvasTexture(canvas);
@@ -62,8 +76,8 @@ function createCanvasTexture(canvas: HTMLCanvasElement): THREE.CanvasTexture {
   texture.wrapT = THREE.RepeatWrapping;
   texture.repeat.set(1, 1);
   texture.magFilter = THREE.LinearFilter;
-  texture.minFilter = THREE.LinearMipmapLinearFilter;
-  texture.generateMipmaps = true;
+  texture.minFilter = THREE.LinearFilter;
+  texture.generateMipmaps = false;
   texture.needsUpdate = true;
   texture.colorSpace = THREE.SRGBColorSpace;
   return texture;
@@ -87,11 +101,16 @@ function drawDiagonalStripes(
 }
 
 /** Texture Three.js - rayures visibles à distance (peu de répétitions sur la face). */
-export function getStripedVarietyTexture(color: string, isBarred: boolean): THREE.CanvasTexture | null {
-  if (!isBarred) return null;
+export function getStripedVarietyTexture(
+  color: string,
+  isBarred: boolean,
+  gl?: WebGLRenderingContext | null,
+): THREE.CanvasTexture | null {
+  if (!isBarred || !gl) return null;
 
   const dark = isDarkColor(color);
   const key = `v5-${color.toLowerCase()}-${dark ? "w" : "b"}`;
+  const textureCache = getContextTextureCache(gl);
   const cached = textureCache.get(key);
   if (cached) return cached;
 

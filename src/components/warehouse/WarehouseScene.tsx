@@ -76,6 +76,7 @@ function Slot({
   highlightYear?: number | null;
   onSelect: () => void;
 }) {
+  const { gl } = useThree();
   const materialRef = useRef<THREE.MeshStandardMaterial>(null);
   const occupied = !!entry;
   const variety = entry?.bigBagVariety ?? null;
@@ -97,8 +98,8 @@ function Slot({
 
   const stripeTexture = useMemo(() => {
     if (!showEntry || selected || !variety?.isBarred) return null;
-    return getStripedVarietyTexture(variety.color, true);
-  }, [showEntry, selected, variety]);
+    return getStripedVarietyTexture(variety.color, true, gl.getContext());
+  }, [showEntry, selected, variety, gl]);
 
   const useStripeMap = !!stripeTexture && !selected;
 
@@ -129,8 +130,10 @@ function Slot({
       emissive = SELECTED_EMISSIVE;
       emissiveIntensity = 0.55;
       opacity = 1;
-    } else if (useStripeMap) {
+    } else if (useStripeMap && variety) {
       color = "#ffffff";
+      emissive = getVarietyEmissive(variety.color);
+      emissiveIntensity = 0.15;
       opacity = 1;
     } else if (variety) {
       color = variety.color;
@@ -155,9 +158,10 @@ function Slot({
         <mesh renderOrder={selected ? 2 : 0}>
           <boxGeometry args={[SLOT_SIZE, SLOT_SIZE, SLOT_SIZE]} />
           <meshStandardMaterial
+            key={useStripeMap ? "striped" : "solid"}
             ref={materialRef}
             color={color}
-            map={useStripeMap ? stripeTexture : null}
+            {...(useStripeMap ? { map: stripeTexture } : {})}
             emissive={emissive}
             emissiveIntensity={emissiveIntensity}
             transparent={opacity < 1}
