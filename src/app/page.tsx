@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import type { SlotSelection } from "@/components/warehouse/WarehouseScene";
@@ -9,6 +9,9 @@ import { EntryListTable } from "@/components/entries/EntryListTable";
 import { EntryQuickSummary } from "@/components/entries/EntryDetailCard";
 import { VarietyFilterSelect } from "@/components/entries/VarietyFilterSelect";
 import { YearFilterSelect } from "@/components/entries/YearFilterSelect";
+import { OfflineIndicator } from "@/components/ui/OfflineIndicator";
+import { useHomeDataSync } from "@/hooks/use-home-data-sync";
+import { buildOccupiedMap } from "@/lib/reconcile-home-selection";
 import { parsePosition } from "@/lib/position";
 import {
   collectEntryYears,
@@ -49,35 +52,19 @@ export default function HomePage() {
   const [decommissionEntry, setDecommissionEntry] = useState<SerializedEntry | null>(null);
   const [message, setMessage] = useState("");
 
-  const loadEntries = useCallback(async () => {
-    const response = await fetch("/api/entries?status=ACTIVE");
-    if (response.ok) {
-      setEntries(await response.json());
-    }
-  }, []);
+  const { refresh } = useHomeDataSync({
+    movingEntry,
+    decommissionEntry,
+    selectedSlot,
+    selectedEntryId,
+    setEntries,
+    setVarietyNames,
+    setSelectedSlot,
+    setSelectedEntryId,
+    setMovingEntry,
+  });
 
-  const loadVarieties = useCallback(async () => {
-    const response = await fetch("/api/big-bag-varieties");
-    if (response.ok) {
-      const varieties = (await response.json()) as { id: string; name: string }[];
-      setVarietyNames(Object.fromEntries(varieties.map((v) => [v.id, v.name])));
-    }
-  }, []);
-
-  useEffect(() => {
-    loadEntries();
-    loadVarieties();
-  }, [loadEntries, loadVarieties]);
-
-  const occupiedMap = useMemo(() => {
-    const map = new Map<string, SerializedEntry>();
-    for (const entry of entries) {
-      if (entry.position) {
-        map.set(entry.position, entry);
-      }
-    }
-    return map;
-  }, [entries]);
+  const occupiedMap = useMemo(() => buildOccupiedMap(entries), [entries]);
 
   const ALL_LEVELS = [0, 1, 2];
 
@@ -142,7 +129,7 @@ export default function HomePage() {
       setMessage(`Entrée #${movingEntry.id} placée en ${selection.position}.`);
       setMovingEntry(null);
       applySlotSelection(selection);
-      loadEntries();
+      void refresh();
       return;
     }
 
@@ -175,8 +162,9 @@ export default function HomePage() {
 
   return (
     <main className="mx-auto max-w-lg space-y-4 px-4 py-4">
-      <header>
+      <header className="flex items-center justify-between gap-2">
         <h1 className="text-xl font-bold text-emerald-900">Entrepôt</h1>
+        <OfflineIndicator />
       </header>
 
       <div className="flex items-start justify-between gap-2">
@@ -343,7 +331,7 @@ export default function HomePage() {
         onSuccess={() => {
           setDecommissionEntry(null);
           applySlotSelection(null);
-          loadEntries();
+          void refresh();
         }}
       />
     </main>

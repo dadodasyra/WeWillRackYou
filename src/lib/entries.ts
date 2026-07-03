@@ -132,3 +132,36 @@ export async function syncEntryIdSequence(prisma: {
     `SELECT setval(pg_get_serial_sequence('"Entry"', 'id'), COALESCE((SELECT MAX(id) FROM "Entry"), 1), true)`,
   );
 }
+
+export type EntriesListStatus = "ACTIVE" | "DECOMMISSIONED" | "ALL";
+
+export function entriesListWhere(status: EntriesListStatus) {
+  return {
+    status: status === "ALL" ? undefined : (status as "ACTIVE" | "DECOMMISSIONED"),
+  };
+}
+
+export async function getEntriesFingerprint(
+  prisma: {
+    entry: {
+      aggregate: (args: {
+        where: { status?: "ACTIVE" | "DECOMMISSIONED" };
+        _count: true;
+        _max: { updatedAt: true };
+      }) => Promise<{
+        _count: number;
+        _max: { updatedAt: Date | null };
+      }>;
+    };
+  },
+  status: EntriesListStatus = "ACTIVE",
+) {
+  const result = await prisma.entry.aggregate({
+    where: entriesListWhere(status),
+    _count: true,
+    _max: { updatedAt: true },
+  });
+
+  const maxMs = result._max.updatedAt?.getTime() ?? 0;
+  return `${result._count}:${maxMs}`;
+}
