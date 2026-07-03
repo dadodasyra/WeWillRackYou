@@ -42,18 +42,6 @@ export function reconcileSelectedSlot(
   };
 }
 
-export function reconcileMovingEntry(
-  movingEntry: SerializedEntry | null,
-  entries: SerializedEntry[],
-): SerializedEntry | null {
-  if (!movingEntry) return null;
-
-  const updated = entries.find((e) => e.id === movingEntry.id);
-  if (!updated || updated.status !== "ACTIVE") return null;
-
-  return updated;
-}
-
 export function reconcileSelectedEntryId(
   selectedEntryId: number | null,
   entries: SerializedEntry[],

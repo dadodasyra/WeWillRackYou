@@ -4,6 +4,12 @@ import { useEffect, useState } from "react";
 
 const KEYBOARD_VISIBLE_THRESHOLD_PX = 80;
 const KEYBOARD_SCROLL_DELAY_MS = 300;
+/** Matches `--bottom-nav-height` (3.75rem) in globals.css */
+const BOTTOM_NAV_HEIGHT_PX = 60;
+
+function getScrollBottomPadding(basePadding: number): number {
+  return basePadding + (isKeyboardVisible() ? 0 : BOTTOM_NAV_HEIGHT_PX);
+}
 
 export function getKeyboardInset(): number {
   if (typeof window === "undefined") return 0;
@@ -31,15 +37,20 @@ export function scrollElementAboveKeyboard(
 
   const viewport = window.visualViewport;
   if (!viewport) {
+    const bottomPadding = getScrollBottomPadding(padding);
     el.scrollIntoView({ behavior, block: "end" });
+    if (bottomPadding > padding) {
+      window.scrollBy({ top: bottomPadding - padding, behavior });
+    }
     return;
   }
 
   const rect = el.getBoundingClientRect();
   const visibleBottom = viewport.offsetTop + viewport.height;
+  const bottomPadding = getScrollBottomPadding(padding);
 
-  if (rect.bottom > visibleBottom - padding) {
-    const delta = rect.bottom - (visibleBottom - padding);
+  if (rect.bottom > visibleBottom - bottomPadding) {
+    const delta = rect.bottom - (visibleBottom - bottomPadding);
     window.scrollBy({ top: delta, behavior });
   }
 }

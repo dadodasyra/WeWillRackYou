@@ -48,12 +48,9 @@ export default function HomePage() {
   const [varietyFilter, setVarietyFilter] = useState("");
   const [yearFilter, setYearFilter] = useState("");
   const [varietyNames, setVarietyNames] = useState<Record<string, string>>({});
-  const [movingEntry, setMovingEntry] = useState<SerializedEntry | null>(null);
   const [decommissionEntry, setDecommissionEntry] = useState<SerializedEntry | null>(null);
-  const [message, setMessage] = useState("");
 
   const { refresh } = useHomeDataSync({
-    movingEntry,
     decommissionEntry,
     selectedSlot,
     selectedEntryId,
@@ -61,7 +58,6 @@ export default function HomePage() {
     setVarietyNames,
     setSelectedSlot,
     setSelectedEntryId,
-    setMovingEntry,
   });
 
   const occupiedMap = useMemo(() => buildOccupiedMap(entries), [entries]);
@@ -102,38 +98,7 @@ export default function HomePage() {
     }
   }
 
-  async function handleSlotSelect(selection: SlotSelection) {
-    if (movingEntry) {
-      if (selection.entry && selection.entry.id !== movingEntry.id) {
-        setMessage("Cet emplacement est déjà occupé.");
-        return;
-      }
-      if (selection.entry?.id === movingEntry.id) {
-        setMovingEntry(null);
-        setMessage("");
-        return;
-      }
-
-      const response = await fetch(`/api/entries/${movingEntry.id}/move`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ position: selection.position }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        setMessage(data.error ?? "Erreur de placement");
-        return;
-      }
-
-      setMessage(`Entrée #${movingEntry.id} placée en ${selection.position}.`);
-      setMovingEntry(null);
-      applySlotSelection(selection);
-      void refresh();
-      return;
-    }
-
-    setMessage("");
+  function handleSlotSelect(selection: SlotSelection) {
     applySlotSelection(
       selectedSlot?.position === selection.position ? null : selection,
     );
@@ -207,25 +172,6 @@ export default function HomePage() {
         ) : null}
       </div>
 
-      {movingEntry ? (
-        <div className="flex items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          <span>
-            Touchez un emplacement vide pour{" "}
-            {movingEntry.position ? "déplacer" : "positionner"} #{movingEntry.id}
-          </span>
-          <button
-            type="button"
-            className="shrink-0 rounded-lg border border-amber-300 px-2 py-1 text-xs font-medium"
-            onClick={() => {
-              setMovingEntry(null);
-              setMessage("");
-            }}
-          >
-            Annuler
-          </button>
-        </div>
-      ) : null}
-
       <Suspense fallback={null}>
         <WarehouseScene
           visibleLevels={visibleLevels}
@@ -264,28 +210,6 @@ export default function HomePage() {
                   </Link>
                   <button
                     type="button"
-                    className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border text-sm transition ${
-                      movingEntry?.id === selectedSlot.entry.id
-                        ? "border-amber-500 bg-amber-200 text-amber-950 shadow-inner ring-2 ring-amber-400"
-                        : "border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100"
-                    }`}
-                    title="Déplacer"
-                    aria-label="Déplacer"
-                    aria-pressed={movingEntry?.id === selectedSlot.entry.id}
-                    onClick={() => {
-                      if (movingEntry?.id === selectedSlot.entry!.id) {
-                        setMovingEntry(null);
-                        setMessage("");
-                      } else {
-                        setMovingEntry(selectedSlot.entry!);
-                        setMessage("");
-                      }
-                    }}
-                  >
-                    📍
-                  </button>
-                  <button
-                    type="button"
                     className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-300 bg-red-50 text-sm text-red-800 hover:bg-red-100"
                     title="Décommissionner"
                     aria-label="Décommissionner"
@@ -300,27 +224,12 @@ export default function HomePage() {
         </div>
       ) : null}
 
-      {message ? (
-        <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900">{message}</p>
-      ) : null}
-
       <EntryListTable
         entries={entries}
         filterCriteria={filterCriteria}
         filterVarietyName={highlightVarietyName}
         selectedEntryId={selectedEntryId}
-        activeMoveEntryId={movingEntry?.id ?? null}
         onEntrySelect={handleEntrySelect}
-        onMoveRequest={(entry) => {
-          if (movingEntry?.id === entry.id) {
-            setMovingEntry(null);
-            setMessage("");
-          } else {
-            setMovingEntry(entry);
-            setMessage("");
-            applySlotSelection(null);
-          }
-        }}
         onDecommissionRequest={setDecommissionEntry}
       />
 

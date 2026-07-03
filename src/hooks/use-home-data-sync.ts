@@ -5,7 +5,6 @@ import type { SlotSelection } from "@/components/warehouse/WarehouseScene";
 import { useNetworkStatus } from "@/hooks/use-network-status";
 import {
   buildOccupiedMap,
-  reconcileMovingEntry,
   reconcileSelectedEntryId,
   reconcileSelectedSlot,
 } from "@/lib/reconcile-home-selection";
@@ -16,7 +15,6 @@ const FOCUS_SYNC_COOLDOWN_MS = 5_000;
 const ENTRIES_STATUS = "ACTIVE";
 
 type HomeDataSyncState = {
-  movingEntry: SerializedEntry | null;
   decommissionEntry: SerializedEntry | null;
   selectedSlot: SlotSelection | null;
   selectedEntryId: number | null;
@@ -27,7 +25,6 @@ type HomeDataSyncActions = {
   setVarietyNames: (names: Record<string, string>) => void;
   setSelectedSlot: (slot: SlotSelection | null) => void;
   setSelectedEntryId: (id: number | null) => void;
-  setMovingEntry: (entry: SerializedEntry | null) => void;
 };
 
 type UseHomeDataSyncOptions = HomeDataSyncState & HomeDataSyncActions;
@@ -64,7 +61,6 @@ async function fetchHomeData(): Promise<{
 }
 
 export function useHomeDataSync({
-  movingEntry,
   decommissionEntry,
   selectedSlot,
   selectedEntryId,
@@ -72,24 +68,22 @@ export function useHomeDataSync({
   setVarietyNames,
   setSelectedSlot,
   setSelectedEntryId,
-  setMovingEntry,
 }: UseHomeDataSyncOptions) {
   const { isOnline } = useNetworkStatus();
   const lastFingerprintRef = useRef<string | null>(null);
   const lastFingerprintCheckAtRef = useRef(0);
   const wasOnlineRef = useRef(isOnline);
-  const syncStateRef = useRef({ movingEntry, decommissionEntry, selectedSlot, selectedEntryId });
+  const syncStateRef = useRef({ decommissionEntry, selectedSlot, selectedEntryId });
   const actionsRef = useRef({
     setEntries,
     setVarietyNames,
     setSelectedSlot,
     setSelectedEntryId,
-    setMovingEntry,
   });
 
   useEffect(() => {
-    syncStateRef.current = { movingEntry, decommissionEntry, selectedSlot, selectedEntryId };
-  }, [movingEntry, decommissionEntry, selectedSlot, selectedEntryId]);
+    syncStateRef.current = { decommissionEntry, selectedSlot, selectedEntryId };
+  }, [decommissionEntry, selectedSlot, selectedEntryId]);
 
   useEffect(() => {
     actionsRef.current = {
@@ -97,9 +91,8 @@ export function useHomeDataSync({
       setVarietyNames,
       setSelectedSlot,
       setSelectedEntryId,
-      setMovingEntry,
     };
-  }, [setEntries, setVarietyNames, setSelectedSlot, setSelectedEntryId, setMovingEntry]);
+  }, [setEntries, setVarietyNames, setSelectedSlot, setSelectedEntryId]);
 
   const applyFetchedData = useCallback(
     (entries: SerializedEntry[], varietyNames: Record<string, string> | null) => {
@@ -113,7 +106,6 @@ export function useHomeDataSync({
       }
       actions.setSelectedSlot(reconcileSelectedSlot(state.selectedSlot, entries, occupiedMap));
       actions.setSelectedEntryId(reconcileSelectedEntryId(state.selectedEntryId, entries));
-      actions.setMovingEntry(reconcileMovingEntry(state.movingEntry, entries));
     },
     [],
   );
@@ -135,8 +127,7 @@ export function useHomeDataSync({
 
   const canSync = useCallback(() => {
     if (!navigator.onLine) return false;
-    const { movingEntry: moving, decommissionEntry: decommissioning } = syncStateRef.current;
-    if (moving || decommissioning) return false;
+    if (syncStateRef.current.decommissionEntry) return false;
     return true;
   }, []);
 

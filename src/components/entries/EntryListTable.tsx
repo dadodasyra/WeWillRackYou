@@ -16,9 +16,7 @@ type Props = {
   filterCriteria?: EntryFilterCriteria;
   filterVarietyName?: string;
   selectedEntryId?: number | null;
-  activeMoveEntryId?: number | null;
   onEntrySelect?: (entry: SerializedEntry) => void;
-  onMoveRequest: (entry: SerializedEntry) => void;
   onDecommissionRequest: (entry: SerializedEntry) => void;
 };
 
@@ -53,21 +51,16 @@ function ActionIconButton({
   href,
   children,
   variant = "default",
-  pressed = false,
 }: {
   label: string;
   onClick?: () => void;
   href?: string;
   children: ReactNode;
-  variant?: "default" | "edit" | "danger" | "move";
-  pressed?: boolean;
+  variant?: "default" | "edit" | "danger";
 }) {
   const variantClass = {
     edit: "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100",
     danger: "border-red-300 bg-red-50 text-red-800 hover:bg-red-100",
-    move: pressed
-      ? "border-amber-500 bg-amber-200 text-amber-950 shadow-inner ring-2 ring-amber-400"
-      : "border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100",
     default: "border-stone-200 bg-white text-stone-700 hover:bg-stone-50",
   }[variant];
 
@@ -113,9 +106,7 @@ export function EntryListTable({
   filterCriteria,
   filterVarietyName,
   selectedEntryId,
-  activeMoveEntryId,
   onEntrySelect,
-  onMoveRequest,
   onDecommissionRequest,
 }: Props) {
   const sorted = sortEntriesForList(entries, filterCriteria);
@@ -152,7 +143,7 @@ export function EntryListTable({
               <th className="w-[5.75rem] px-1.5 py-1.5 font-medium">Type</th>
               <th className="w-11 px-1.5 py-1.5 font-medium">Empl.</th>
               <th className="hidden px-1.5 py-1.5 font-medium sm:table-cell">Infos</th>
-              <th className="w-[6.5rem] px-1 py-1.5" />
+              <th className="w-[4.5rem] px-1 py-1.5" />
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
@@ -192,14 +183,6 @@ export function EntryListTable({
                         variant="edit"
                       >
                         ✏️
-                      </ActionIconButton>
-                      <ActionIconButton
-                        label={entry.position ? "Déplacer" : "Positionner"}
-                        variant="move"
-                        pressed={activeMoveEntryId === entry.id}
-                        onClick={() => onMoveRequest(entry)}
-                      >
-                        📍
                       </ActionIconButton>
                       <ActionIconButton
                         label="Décommissionner"
