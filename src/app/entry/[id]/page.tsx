@@ -72,6 +72,16 @@ function EntryPageContent() {
     setEditing(true);
   }, [entry, searchParams]);
 
+  useEffect(() => {
+    if (!showMap) return;
+
+    const frameId = requestAnimationFrame(() => {
+      scheduleScrollAboveKeyboard(moveButtonRef.current);
+    });
+
+    return () => cancelAnimationFrame(frameId);
+  }, [showMap]);
+
   const occupiedMap = useMemo(() => {
     const map = new Map<string, SerializedEntry>();
     for (const e of entries) {
@@ -196,7 +206,6 @@ function EntryPageContent() {
               label="Position"
               value={position}
               onChange={(e) => setPosition(e.target.value.toUpperCase())}
-              onFocus={() => scheduleScrollAboveKeyboard(moveButtonRef.current)}
               placeholder="Ex. B15"
             />
             <p className="text-xs text-stone-500">
@@ -213,7 +222,12 @@ function EntryPageContent() {
               occupiedMap={occupiedMap}
               selectedPosition={position.trim() || null}
               onSlotSelect={({ position: pos, entry: slotEntry }) => {
-                if (!slotEntry) setPosition(pos);
+                if (!slotEntry) {
+                  setPosition(pos);
+                  requestAnimationFrame(() => {
+                    scheduleScrollAboveKeyboard(moveButtonRef.current);
+                  });
+                }
               }}
             />
           ) : null}

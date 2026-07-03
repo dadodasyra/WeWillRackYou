@@ -67,6 +67,9 @@ export function EntryForm({
   const [showMap, setShowMap] = useState(false);
   const [entries, setEntries] = useState<SerializedEntry[]>([]);
   const mapRef = useRef<HTMLDivElement>(null);
+  const actionsRef = useRef<HTMLDivElement>(null);
+
+  const isCreate = !initial;
 
   const loadEntries = useCallback(async () => {
     const response = await fetch("/api/entries?status=ACTIVE");
@@ -80,12 +83,13 @@ export function EntryForm({
   useEffect(() => {
     if (!showMap) return;
 
+    const target = isCreate ? mapRef.current : actionsRef.current;
     const frameId = requestAnimationFrame(() => {
-      scheduleScrollAboveKeyboard(mapRef.current);
+      scheduleScrollAboveKeyboard(target);
     });
 
     return () => cancelAnimationFrame(frameId);
-  }, [showMap]);
+  }, [showMap, isCreate]);
 
   const occupiedMap = useMemo(() => {
     const map = new Map<string, SerializedEntry>();
@@ -108,7 +112,6 @@ export function EntryForm({
     }
   }, [initial]);
 
-  const isCreate = !initial;
   const bigBagFieldsRequired = isCreate && kind === "BIG_BAG";
 
   const setFieldError = useCallback((field: EntryFormField, message: string | null) => {
@@ -428,6 +431,11 @@ export function EntryForm({
                 setPosition(pos);
                 setOccupiedPositionEntryId(null);
                 if (isCreate) clearFieldError("position");
+                if (!isCreate) {
+                  requestAnimationFrame(() => {
+                    scheduleScrollAboveKeyboard(actionsRef.current);
+                  });
+                }
               }
             }}
           />
@@ -509,7 +517,7 @@ export function EntryForm({
 
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
-      <div className="space-y-2">
+      <div ref={actionsRef} className="space-y-2">
         <Button
           type="submit"
           disabled={
