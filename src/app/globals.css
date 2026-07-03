@@ -7,6 +7,7 @@ html {
 :root {
   --background: #fafaf9;
   --foreground: #1c1917;
+  --bottom-nav-height: 3.75rem;
 }
 
 @theme inline {
@@ -24,4 +25,8 @@ body {
 
 .safe-area-pb {
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+.pb-bottom-nav {
+  padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
 }

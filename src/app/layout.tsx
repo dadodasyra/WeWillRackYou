@@ -38,9 +38,9 @@ export default function RootLayout({
   return (
     <html
       lang="fr"
-      className={`${geistSans.variable} ${geistMono.variable} h-dvh antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
-      <body className="h-dvh overflow-hidden bg-stone-50 text-stone-900">
+      <body className="min-h-dvh bg-stone-50 text-stone-900">
         <Providers>{children}</Providers>
       </body>
     </html>
