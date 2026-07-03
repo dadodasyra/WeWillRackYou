@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { VarietySelect } from "@/components/entries/VarietySelect";
@@ -19,6 +19,7 @@ import {
   validateYear,
 } from "@/lib/entry-form-validation";
 import type { SerializedEntry } from "@/lib/validations";
+import { scheduleScrollAboveKeyboard } from "@/lib/keyboard-viewport";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -65,6 +66,7 @@ export function EntryForm({
   const [fieldErrors, setFieldErrors] = useState<EntryFormFieldErrors>({});
   const [showMap, setShowMap] = useState(false);
   const [entries, setEntries] = useState<SerializedEntry[]>([]);
+  const mapRef = useRef<HTMLDivElement>(null);
 
   const loadEntries = useCallback(async () => {
     const response = await fetch("/api/entries?status=ACTIVE");
@@ -74,6 +76,16 @@ export function EntryForm({
   useEffect(() => {
     if (showMap) loadEntries();
   }, [showMap, loadEntries]);
+
+  useEffect(() => {
+    if (!showMap) return;
+
+    const frameId = requestAnimationFrame(() => {
+      scheduleScrollAboveKeyboard(mapRef.current);
+    });
+
+    return () => cancelAnimationFrame(frameId);
+  }, [showMap]);
 
   const occupiedMap = useMemo(() => {
     const map = new Map<string, SerializedEntry>();
@@ -405,19 +417,21 @@ export function EntryForm({
         {showMap ? "Masquer la carte" : "Choisir sur la carte"}
       </Button>
       {showMap ? (
-        <WarehouseScene
-          compact
-          visibleLevels={[0, 1, 2]}
-          occupiedMap={occupiedMap}
-          selectedPosition={position.trim() || null}
-          onSlotSelect={({ position: pos, entry }) => {
-            if (!entry) {
-              setPosition(pos);
-              setOccupiedPositionEntryId(null);
-              if (isCreate) clearFieldError("position");
-            }
-          }}
-        />
+        <div ref={mapRef}>
+          <WarehouseScene
+            compact
+            visibleLevels={[0, 1, 2]}
+            occupiedMap={occupiedMap}
+            selectedPosition={position.trim() || null}
+            onSlotSelect={({ position: pos, entry }) => {
+              if (!entry) {
+                setPosition(pos);
+                setOccupiedPositionEntryId(null);
+                if (isCreate) clearFieldError("position");
+              }
+            }}
+          />
+        </div>
       ) : null}
 
       {kind === "BIG_BAG" ? (

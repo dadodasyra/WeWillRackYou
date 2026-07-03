@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import Link from "next/link";
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import type { SerializedEntry } from "@/lib/validations";
 import { DECOMMISSION_REASON_LABELS } from "@/lib/entries";
+import { scheduleScrollAboveKeyboard } from "@/lib/keyboard-viewport";
 
 const WarehouseScene = dynamic(
   () => import("@/components/warehouse/WarehouseScene").then((m) => m.WarehouseScene),
@@ -31,6 +32,7 @@ function EntryPageContent() {
   const [showDecomModal, setShowDecomModal] = useState(false);
   const [message, setMessage] = useState("");
   const [entries, setEntries] = useState<SerializedEntry[]>([]);
+  const moveButtonRef = useRef<HTMLDivElement>(null);
 
   const loadEntry = useCallback(async () => {
     if (!Number.isInteger(entryId) || entryId <= 0) {
@@ -194,6 +196,7 @@ function EntryPageContent() {
               label="Position"
               value={position}
               onChange={(e) => setPosition(e.target.value.toUpperCase())}
+              onFocus={() => scheduleScrollAboveKeyboard(moveButtonRef.current)}
               placeholder="Ex. B15"
             />
             <p className="text-xs text-stone-500">
@@ -214,7 +217,9 @@ function EntryPageContent() {
               }}
             />
           ) : null}
-          <Button onClick={handleMove}>Appliquer la position</Button>
+          <div ref={moveButtonRef}>
+            <Button onClick={handleMove}>Appliquer la position</Button>
+          </div>
         </section>
       ) : null}
 
