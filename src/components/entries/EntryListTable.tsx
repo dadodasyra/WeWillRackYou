@@ -29,15 +29,15 @@ export function sortEntriesForList(
   const filterActive = filterCriteria && hasActiveEntryFilters(filterCriteria);
 
   return [...entries].sort((a, b) => {
-    const aUnplaced = a.position ? 1 : 0;
-    const bUnplaced = b.position ? 1 : 0;
-    if (aUnplaced !== bUnplaced) return aUnplaced - bUnplaced;
-
     if (filterActive) {
       const aMatch = entryMatchesFilters(a, filterCriteria) ? 0 : 1;
       const bMatch = entryMatchesFilters(b, filterCriteria) ? 0 : 1;
       if (aMatch !== bMatch) return aMatch - bMatch;
     }
+
+    const aUnplaced = a.position ? 1 : 0;
+    const bUnplaced = b.position ? 1 : 0;
+    if (aUnplaced !== bUnplaced) return aUnplaced - bUnplaced;
 
     if (a.position && b.position && a.position !== b.position) {
       return a.position.localeCompare(b.position);
