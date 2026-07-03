@@ -3,6 +3,13 @@ import { NextResponse } from "next/server";
 
 const publicPaths = ["/login", "/api/auth"];
 
+const NO_INDEX_HEADER = "noindex, nofollow, noarchive, nosnippet";
+
+function withNoIndex(response: NextResponse) {
+  response.headers.set("X-Robots-Tag", NO_INDEX_HEADER);
+  return response;
+}
+
 export default auth((req) => {
   const { pathname } = req.nextUrl;
   const isPublic = publicPaths.some(
@@ -11,22 +18,22 @@ export default auth((req) => {
 
   if (isPublic) {
     if (pathname === "/login" && req.auth) {
-      return NextResponse.redirect(new URL("/", req.url));
+      return withNoIndex(NextResponse.redirect(new URL("/", req.url)));
     }
-    return NextResponse.next();
+    return withNoIndex(NextResponse.next());
   }
 
   if (!req.auth) {
     const loginUrl = new URL("/login", req.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
-    return NextResponse.redirect(loginUrl);
+    return withNoIndex(NextResponse.redirect(loginUrl));
   }
 
   if (pathname.startsWith("/admin") && req.auth.user?.role !== "ADMIN") {
-    return NextResponse.redirect(new URL("/", req.url));
+    return withNoIndex(NextResponse.redirect(new URL("/", req.url)));
   }
 
-  return NextResponse.next();
+  return withNoIndex(NextResponse.next());
 });
 
 export const config = {
