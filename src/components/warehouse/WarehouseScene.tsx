@@ -162,11 +162,10 @@ function Slot({
   const displayColorRef = useRef(new THREE.Color(appearance.color));
   const displayEmissiveRef = useRef(new THREE.Color(appearance.emissive));
 
-  useEffect(() => {
-    baseColorRef.current.set(appearance.baseColor);
-    displayColorRef.current.set(appearance.color);
-    displayEmissiveRef.current.set(appearance.emissive);
-  }, [appearance]);
+  // Keep refs in sync during render so useLayoutEffect sees the latest appearance.
+  baseColorRef.current.set(appearance.baseColor);
+  displayColorRef.current.set(appearance.color);
+  displayEmissiveRef.current.set(appearance.emissive);
 
   useLayoutEffect(() => {
     if (selected) return;
