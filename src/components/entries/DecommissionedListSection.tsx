@@ -43,6 +43,8 @@ function ActionButton({
   );
 }
 
+type PaidFilter = "all" | "paid" | "unpaid";
+
 type Props = {
   reason: DecommissionReason;
   title: string;
@@ -50,6 +52,10 @@ type Props = {
   emptyMessage: string;
   isAdmin: boolean;
   onMessage?: (message: string) => void;
+  /** Ferme du kikiriki : filtre payé / non payé et colonne case à cocher */
+  showPaidControls?: boolean;
+  /** Désactive la suppression en masse (ex. kikiriki) */
+  allowClearAll?: boolean;
 };
 
 export function DecommissionedListSection({
@@ -59,9 +65,12 @@ export function DecommissionedListSection({
   emptyMessage,
   isAdmin,
   onMessage,
+  showPaidControls = false,
+  allowClearAll = true,
 }: Props) {
   const [entries, setEntries] = useState<SerializedEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [paidFilter, setPaidFilter] = useState<PaidFilter>("all");
   const [selectedEntryId, setSelectedEntryId] = useState<number | null>(null);
   const [deleteEntry, setDeleteEntry] = useState<SerializedEntry | null>(null);
   const [restoreEntry, setRestoreEntry] = useState<SerializedEntry | null>(null);
@@ -69,12 +78,14 @@ export function DecommissionedListSection({
 
   const load = useCallback(async () => {
     setLoading(true);
-    const response = await fetch(`/api/entries/decommissioned?reason=${reason}`);
+    const filterQuery =
+      showPaidControls && paidFilter !== "all" ? `&filter=${paidFilter}` : "";
+    const response = await fetch(`/api/entries/decommissioned?reason=${reason}${filterQuery}`);
     if (response.ok) {
       setEntries(await response.json());
     }
     setLoading(false);
-  }, [reason]);
+  }, [reason, showPaidControls, paidFilter]);
 
   useEffect(() => {
     load();
@@ -87,6 +98,19 @@ export function DecommissionedListSection({
 
   function handleEntrySelect(entry: SerializedEntry) {
     setSelectedEntryId((current) => (current === entry.id ? null : entry.id));
+  }
+
+  async function togglePaid(entry: SerializedEntry) {
+    if (!isAdmin) return;
+
+    const response = await fetch(`/api/entries/${entry.id}/paid`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isPaid: !entry.isPaid }),
+    });
+    if (response.ok) {
+      load();
+    }
   }
 
   async function handleClearAll() {
@@ -116,7 +140,7 @@ export function DecommissionedListSection({
           <h2 className="text-base font-semibold text-emerald-900">{title}</h2>
           {subtitle ? <p className="text-xs text-stone-500">{subtitle}</p> : null}
         </div>
-        {isAdmin && !loading && entries.length > 0 ? (
+        {allowClearAll && isAdmin && !loading && entries.length > 0 ? (
           <button
             type="button"
             className="inline-flex h-9 shrink-0 items-center justify-center rounded-xl border border-red-300 bg-red-50 px-3 text-xs font-medium text-red-800 hover:bg-red-100"
@@ -128,6 +152,29 @@ export function DecommissionedListSection({
           </button>
         ) : null}
       </header>
+
+      {showPaidControls ? (
+        <div className="flex gap-2">
+          {(
+            [
+              ["all", "Tous"],
+              ["unpaid", "Non payés"],
+              ["paid", "Payés"],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setPaidFilter(value)}
+              className={`flex-1 rounded-xl py-2 text-xs font-medium ${
+                paidFilter === value ? "bg-emerald-700 text-white" : "bg-stone-100 text-stone-700"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       {loading ? (
         <p className="text-sm text-stone-500">Chargement...</p>
@@ -182,6 +229,9 @@ export function DecommissionedListSection({
             onEntrySelect={handleEntrySelect}
             title={title}
             emptyMessage={emptyMessage}
+            showPaidColumn={showPaidControls}
+            paidToggleDisabled={!isAdmin}
+            onPaidToggle={togglePaid}
           />
         </>
       )}

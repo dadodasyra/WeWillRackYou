@@ -12,6 +12,9 @@ type Props = {
   onEntrySelect: (entry: SerializedEntry) => void;
   title?: string;
   emptyMessage?: string;
+  showPaidColumn?: boolean;
+  paidToggleDisabled?: boolean;
+  onPaidToggle?: (entry: SerializedEntry) => void;
 };
 
 function TypeCell({ entry }: { entry: SerializedEntry }) {
@@ -40,6 +43,9 @@ export function ArchiveEntryList({
   onEntrySelect,
   title = "Archives",
   emptyMessage = "Aucune entrée.",
+  showPaidColumn = false,
+  paidToggleDisabled = false,
+  onPaidToggle,
 }: Props) {
   const sorted = sortEntriesForList(entries);
   const rowRefs = useRef<Map<number, HTMLTableRowElement>>(new Map());
@@ -67,6 +73,11 @@ export function ArchiveEntryList({
               <th className="w-[5.75rem] px-1.5 py-1.5 font-medium">Type</th>
               <th className="hidden px-1.5 py-1.5 font-medium sm:table-cell">Infos</th>
               <th className="w-[7.5rem] px-1.5 py-1.5 font-medium">Décom.</th>
+              {showPaidColumn ? (
+                <th className="w-9 px-1 py-1.5 text-center font-medium" title="Payé">
+                  ✓
+                </th>
+              ) : null}
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
@@ -98,6 +109,20 @@ export function ArchiveEntryList({
                       ? new Date(entry.decommissionedAt).toLocaleDateString("fr-FR")
                       : "-"}
                   </td>
+                  {showPaidColumn ? (
+                    <td className="px-1 py-1.5 text-center">
+                      <input
+                        type="checkbox"
+                        checked={entry.isPaid}
+                        disabled={paidToggleDisabled}
+                        title={paidToggleDisabled ? "Réservé aux administrateurs" : "Payé"}
+                        aria-label={`Entrée #${entry.id} payée`}
+                        className={paidToggleDisabled ? "opacity-70" : undefined}
+                        onClick={(event) => event.stopPropagation()}
+                        onChange={() => onPaidToggle?.(entry)}
+                      />
+                    </td>
+                  ) : null}
                 </tr>
               );
             })}
