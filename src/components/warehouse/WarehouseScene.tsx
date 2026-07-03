@@ -3,7 +3,7 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Line, OrbitControls, Text } from "@react-three/drei";
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { iterWarehouseSlots, WAREHOUSE, type WarehouseRow } from "@/lib/warehouse-config";
 import {
@@ -19,7 +19,6 @@ import {
   getWarehouseBounds,
   LEVEL_COLORS,
   SELECTED_COLOR,
-  SELECTED_EMISSIVE,
   SLOT_SIZE,
 } from "@/lib/warehouse-layout";
 import { formatPosition } from "@/lib/position";
@@ -97,16 +96,94 @@ function Slot({
   const hideFilteredOccupied = filterActive && occupied && !matchesFilter && !selected;
 
   const stripeTexture = useMemo(() => {
-    if (!showEntry || selected || !variety?.isBarred) return null;
+    if (!showEntry || !variety?.isBarred) return null;
     return getStripedVarietyTexture(variety.color, true, gl.getContext());
-  }, [showEntry, selected, variety, gl]);
+  }, [showEntry, variety, gl]);
 
-  const useStripeMap = !!stripeTexture && !selected;
+  const useStripeMap = !!stripeTexture;
+
+  const appearance = useMemo(() => {
+    let color = colors.empty;
+    let emissive = "#000000";
+    let emissiveIntensity = 0;
+    let opacity = 0.9;
+    let renderVisible = true;
+    let baseColor = colors.empty;
+
+    if (showEntry) {
+      if (variety) {
+        baseColor = useStripeMap ? "#ffffff" : variety.color;
+      } else {
+        baseColor = colors.occupied;
+      }
+    }
+
+    if (selected) {
+      color = baseColor;
+      emissive = "#000000";
+      emissiveIntensity = 0;
+      opacity = 1;
+    } else if (showEntry) {
+      if (useStripeMap && variety) {
+        color = "#ffffff";
+        emissive = getVarietyEmissive(variety.color);
+        emissiveIntensity = 0.15;
+        opacity = 1;
+      } else if (variety) {
+        color = variety.color;
+        emissive = getVarietyEmissive(variety.color);
+        emissiveIntensity = 0.25;
+        opacity = 1;
+      } else {
+        color = colors.occupied;
+        emissive = "#14532d";
+        emissiveIntensity = 0.15;
+        opacity = 1;
+      }
+    } else if (hideFilteredOccupied) {
+      renderVisible = false;
+    } else if (showDimmedEmpty) {
+      opacity = 0.1;
+    }
+
+    return { color, emissive, emissiveIntensity, opacity, renderVisible, baseColor };
+  }, [
+    colors,
+    hideFilteredOccupied,
+    selected,
+    showDimmedEmpty,
+    showEntry,
+    useStripeMap,
+    variety,
+  ]);
+
+  const baseColorRef = useRef(new THREE.Color(appearance.baseColor));
+  const selectedColorRef = useRef(new THREE.Color(SELECTED_COLOR));
+  const displayColorRef = useRef(new THREE.Color(appearance.color));
+  const displayEmissiveRef = useRef(new THREE.Color(appearance.emissive));
+
+  useEffect(() => {
+    baseColorRef.current.set(appearance.baseColor);
+    displayColorRef.current.set(appearance.color);
+    displayEmissiveRef.current.set(appearance.emissive);
+  }, [appearance]);
+
+  useLayoutEffect(() => {
+    if (selected) return;
+    const mat = materialRef.current;
+    if (!mat) return;
+    mat.color.copy(displayColorRef.current);
+    mat.emissive.copy(displayEmissiveRef.current);
+    mat.emissiveIntensity = appearance.emissiveIntensity;
+  }, [selected, appearance]);
 
   useFrame(({ clock }) => {
-    if (!selected || !materialRef.current) return;
-    materialRef.current.emissiveIntensity =
-      Math.sin(clock.elapsedTime * 5) * 0.15 + 0.5;
+    const mat = materialRef.current;
+    if (!mat || !selected) return;
+    const t = (Math.sin(clock.elapsedTime * 5) + 1) / 2;
+    mat.color.lerpColors(baseColorRef.current, selectedColorRef.current, t);
+    mat.emissive.set("#000000");
+    mat.emissiveIntensity = 0;
   });
 
   const match = positionCode.match(/^([A-G])([0-2])([1-9])$/);
@@ -118,39 +195,8 @@ function Slot({
     level,
   );
 
-  let color = colors.empty;
-  let emissive = "#000000";
-  let emissiveIntensity = 0;
-  let opacity = 0.9;
-  let renderVisible = true;
-
-  if (showEntry) {
-    if (selected) {
-      color = SELECTED_COLOR;
-      emissive = SELECTED_EMISSIVE;
-      emissiveIntensity = 0.55;
-      opacity = 1;
-    } else if (useStripeMap && variety) {
-      color = "#ffffff";
-      emissive = getVarietyEmissive(variety.color);
-      emissiveIntensity = 0.15;
-      opacity = 1;
-    } else if (variety) {
-      color = variety.color;
-      emissive = getVarietyEmissive(variety.color);
-      emissiveIntensity = 0.25;
-      opacity = 1;
-    } else {
-      color = colors.occupied;
-      emissive = "#14532d";
-      emissiveIntensity = 0.15;
-      opacity = 1;
-    }
-  } else if (hideFilteredOccupied) {
-    renderVisible = false;
-  } else if (showDimmedEmpty) {
-    opacity = 0.1;
-  }
+  const { color, emissive, emissiveIntensity, opacity, renderVisible } = appearance;
+  const materialKey = useStripeMap ? "striped" : "solid";
 
   return (
     <group position={[x, y, z]}>
@@ -158,7 +204,7 @@ function Slot({
         <mesh renderOrder={selected ? 2 : 0}>
           <boxGeometry args={[SLOT_SIZE, SLOT_SIZE, SLOT_SIZE]} />
           <meshStandardMaterial
-            key={useStripeMap ? "striped" : "solid"}
+            key={materialKey}
             ref={materialRef}
             color={color}
             {...(useStripeMap ? { map: stripeTexture } : {})}
