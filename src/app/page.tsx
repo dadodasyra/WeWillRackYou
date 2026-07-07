@@ -167,7 +167,9 @@ export default function HomePage() {
             {highlightVarietyName && filterCriteria.year != null ? " de " : null}
             {!highlightVarietyName && filterCriteria.year != null ? "de " : null}
             {filterCriteria.year != null ? <strong>{filterCriteria.year}</strong> : null}{" "}
-            . <strong>{formatWeightKg(filteredWeightKg)}</strong>
+            {" "}. <strong>{formatWeightKg(filteredWeightKg)}</strong> kg
+            . <strong>{filteredEntries.length}</strong>{" "}
+            {filteredEntries.length > 1 ? "big bags" : "big bag"}
           </p>
         ) : null}
       </div>

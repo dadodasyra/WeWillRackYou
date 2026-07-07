@@ -197,6 +197,10 @@ function Slot({
   const { color, emissive, emissiveIntensity, opacity, renderVisible } = appearance;
   const materialKey = useStripeMap ? "striped" : "solid";
 
+  // Les emplacements transparents (non concernés par le filtre actif) ne doivent
+  // pas être sélectionnables : on retire la boîte de clic invisible dans ce cas.
+  const selectable = !hideFilteredOccupied && !showDimmedEmpty;
+
   return (
     <group position={[x, y, z]}>
       {renderVisible ? (
@@ -215,22 +219,24 @@ function Slot({
           />
         </mesh>
       ) : null}
-      <mesh
-        onClick={(e) => {
-          e.stopPropagation();
-          onSelect();
-        }}
-        onPointerOver={(e) => {
-          e.stopPropagation();
-          document.body.style.cursor = "pointer";
-        }}
-        onPointerOut={() => {
-          document.body.style.cursor = "auto";
-        }}
-      >
-        <boxGeometry args={[SLOT_SIZE * 1.02, SLOT_SIZE * 1.02, SLOT_SIZE * 1.02]} />
-        <meshBasicMaterial visible={false} />
-      </mesh>
+      {selectable ? (
+        <mesh
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelect();
+          }}
+          onPointerOver={(e) => {
+            e.stopPropagation();
+            document.body.style.cursor = "pointer";
+          }}
+          onPointerOut={() => {
+            document.body.style.cursor = "auto";
+          }}
+        >
+          <boxGeometry args={[SLOT_SIZE * 1.02, SLOT_SIZE * 1.02, SLOT_SIZE * 1.02]} />
+          <meshBasicMaterial visible={false} />
+        </mesh>
+      ) : null}
     </group>
   );
 }

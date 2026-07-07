@@ -27,7 +27,7 @@ export function sumEntryWeightKg(entries: SerializedEntry[]): number {
 }
 
 export function formatWeightKg(total: number): string {
-  return `${total % 1 === 0 ? total : total.toFixed(1)} kg`;
+  return `${total % 1 === 0 ? total : total.toFixed(1)}`;
 }
 
 export function collectEntryYears(entries: SerializedEntry[]): number[] {
