@@ -8,6 +8,7 @@ const ADMIN_TABS = [
   { href: "/admin/varieties", label: "Variétés" },
   { href: "/admin/owners", label: "Propriétaires" },
   { href: "/admin/qr-print", label: "QR Codes" },
+  { href: "/admin/backup", label: "Sauvegarde" },
 ] as const;
 
 export function AdminSubNav() {

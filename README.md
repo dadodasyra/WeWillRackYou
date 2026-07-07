@@ -132,6 +132,7 @@ Créer un fichier `.env` à la racine :
 DATABASE_URL=postgresql://wewillrackyou:MOT_DE_PASSE_FORT@db:5432/wewillrackyou
 AUTH_SECRET=cle-secrete-longue-et-aleatoire-minimum-32-caracteres
 AUTH_URL=https://votre-domaine.fr
+BACKUP_DIR=/app/backups
 ```
 
 Modifier `docker-compose.yml` pour utiliser un mot de passe PostgreSQL fort.
@@ -148,6 +149,41 @@ docker compose up -d --build
 docker compose exec app npx prisma db push
 docker compose exec app npm run db:seed
 ```
+
+### 4.b Sauvegardes
+
+Le système inclut:
+
+- **Sauvegardes automatiques quotidiennes intégrées** : l'application crée une sauvegarde par
+  jour (14 conservées au maximum, rotation automatique des plus anciennes). Aucune configuration
+  externe requise ; désactivable via `AUTO_BACKUP_ENABLED=false`.
+- **Sauvegarde/restauration depuis l'UI admin** (`/admin/backup`) pour `Entry`, `Owner`,
+  `BigBagVariety`. Les sauvegardes automatiques y sont visibles (badge « Automatique ») et
+  restaurables comme les manuelles.
+- **Exclusion explicite des comptes utilisateurs** (`User`) : jamais exportés/écrasés.
+
+Les sauvegardes applicatives sont stockées dans `BACKUP_DIR` (monté en volume). Configurer
+`docker-compose.yml` :
+
+```yaml
+services:
+  app:
+    volumes:
+      - ./backups:/app/backups
+    environment:
+      BACKUP_DIR: /app/backups
+```
+
+#### Sauvegarde du conteneur (offsite)
+
+La protection hors-site (perte du disque, sinistre) se fait au niveau de l'hyperviseur : sauvegarde
+du CT/LXC entier (Proxmox Backup Server, snapshots, etc.). Les JSON dans `BACKUP_DIR` servent à la
+restauration fine depuis l'UI ; la sauvegarde du CT couvre l'ensemble (app, base PostgreSQL,
+fichiers de sauvegarde).
+
+Reprise après sinistre : restaurer le CT, ou sur une installation neuve récupérer un fichier JSON
+depuis la sauvegarde du CT, se connecter en admin, puis `/admin/backup` → « Restaurer depuis un
+fichier ».
 
 ### 5. HTTPS avec Nginx et Let's Encrypt
 

@@ -25,9 +25,12 @@ services:
       DATABASE_URL: postgresql://wewillrackyou:wewillrackyou@db:5432/wewillrackyou
       AUTH_SECRET: ${AUTH_SECRET:-change-me-in-production}
       AUTH_URL: ${AUTH_URL:-http://localhost:3000}
+      BACKUP_DIR: ${BACKUP_DIR:-/app/backups}
     depends_on:
       db:
         condition: service_healthy
+    volumes:
+      - ./backups:/app/backups
 
 volumes:
   postgres_data:
